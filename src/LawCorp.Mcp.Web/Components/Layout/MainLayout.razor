@@ -1,0 +1,43 @@
+@inherits LayoutComponentBase
+
+<FluentLayout>
+    <FluentHeader>
+        <div class="lc-header">
+            <span class="lc-header__title">
+                @(Configuration["Branding:AppName"] ?? "Law-Corp")
+            </span>
+            <FluentSpacer />
+            <LoginDisplay />
+        </div>
+    </FluentHeader>
+
+    <FluentStack Orientation="Orientation.Horizontal" Width="100%" Style="height: calc(100vh - 100px); overflow: hidden;">
+        <NavMenu />
+
+        <FluentBodyContent Style="flex: 1; overflow-y: auto; padding: var(--lc-space-lg);">
+            <div class="lc-page">
+                @Body
+            </div>
+        </FluentBodyContent>
+    </FluentStack>
+
+    <FluentFooter>
+        <div class="lc-footer">
+            @(Configuration["Branding:FooterText"] ?? "Law-Corp LLP — MCP Reference Architecture")
+        </div>
+    </FluentFooter>
+</FluentLayout>
+
+<FluentDialogProvider />
+<FluentToastProvider />
+<FluentMessageBarProvider />
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">X</span>
+</div>
+
+@code {
+    [Inject] private IConfiguration Configuration { get; set; } = default!;
+}

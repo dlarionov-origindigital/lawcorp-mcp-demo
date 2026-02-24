@@ -1,0 +1,81 @@
+@page "/"
+
+<PageTitle>@(Configuration["Branding:AppName"] ?? "Law-Corp")</PageTitle>
+
+<h1 class="lc-page-title">@(Configuration["Branding:AppName"] ?? "Law-Corp")</h1>
+<p class="lc-page-subtitle">@(Configuration["Branding:Tagline"] ?? "Corporate law. Corporately.")</p>
+
+<div class="lc-divider"></div>
+
+@if (UseAuth)
+{
+    <AuthorizeView>
+        <Authorized>
+            <div class="lc-identity-card">
+                <FluentPersona Name="@context.User.Identity?.Name" Size="48px" />
+                <div class="lc-identity-card__details">
+                    <span class="lc-identity-card__name">@context.User.Identity?.Name</span>
+                    @{
+                        var role = context.User.Claims.FirstOrDefault(c => c.Type == "roles")?.Value
+                                ?? context.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+                        var email = context.User.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value;
+                    }
+                    @if (!string.IsNullOrEmpty(role))
+                    {
+                        <span class="lc-identity-card__role">@role</span>
+                    }
+                    @if (!string.IsNullOrEmpty(email))
+                    {
+                        <span class="lc-identity-card__email">@email</span>
+                    }
+                </div>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <div class="lc-info-banner">
+                Sign in with your Entra ID account to access MCP tools and see your identity.
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+}
+else
+{
+    <div class="lc-info-banner--muted lc-info-banner">
+        Running in demo mode. Set <code>UseAuth: true</code> in <code>appsettings.Development.json</code> to enable Entra ID sign-in.
+    </div>
+}
+
+<div class="lc-divider"></div>
+
+<p class="lc-section-title">MCP Capabilities</p>
+
+<div class="lc-capability-grid">
+    <div class="lc-capability-card">
+        <span class="lc-capability-card__title">Tools</span>
+        <span class="lc-capability-card__desc">
+            Invoke MCP tools — search cases, draft documents, log time, run conflict checks.
+        </span>
+        <a href="/tools" class="lc-capability-card__link">Browse tools &rarr;</a>
+    </div>
+
+    <div class="lc-capability-card">
+        <span class="lc-capability-card__title">Resources</span>
+        <span class="lc-capability-card__desc">
+            Read firm data exposed as URI-addressable resources.
+        </span>
+        <a href="/resources" class="lc-capability-card__link">Browse resources &rarr;</a>
+    </div>
+
+    <div class="lc-capability-card">
+        <span class="lc-capability-card__title">Prompts</span>
+        <span class="lc-capability-card__desc">
+            Use reusable prompt templates for common legal workflows.
+        </span>
+        <a href="/prompts" class="lc-capability-card__link">Browse prompts &rarr;</a>
+    </div>
+</div>
+
+@code {
+    [Inject] private IConfiguration Configuration { get; set; } = default!;
+    private bool UseAuth => Configuration.GetValue<bool>("UseAuth");
+}

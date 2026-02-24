@@ -2,6 +2,7 @@ using LawCorp.Mcp.Core.Models;
 using LawCorp.Mcp.Data;
 using LawCorp.Mcp.MockData.Generators;
 using LawCorp.Mcp.MockData.Partials;
+using LawCorp.Mcp.MockData.Personas;
 using LawCorp.Mcp.MockData.Profiles;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +12,11 @@ namespace LawCorp.Mcp.MockData;
 /// Orchestrates deterministic mock data generation and seeds the LawCorpDbContext.
 /// Use <see cref="SmallFirmProfile"/> for unit tests, <see cref="MediumFirmProfile"/> for dev, <see cref="LargeFirmProfile"/> for load testing.
 /// </summary>
-public class MockDataSeeder(LawCorpDbContext db, IFirmProfile? profile = null, int seed = 42)
+public class MockDataSeeder(
+    LawCorpDbContext db,
+    IFirmProfile? profile = null,
+    PersonaSeedConfig? personaSeedConfig = null,
+    int seed = 42)
 {
     private readonly IFirmProfile _profile = profile ?? new MediumFirmProfile();
     private readonly Random _rng = new(seed);
@@ -31,19 +36,26 @@ public class MockDataSeeder(LawCorpDbContext db, IFirmProfile? profile = null, i
         await db.Courts.AddRangeAsync(courts, ct);
         await db.SaveChangesAsync(ct);
 
-        // 3. Attorneys
+        // 3. Persona fixture (seeded first so they get deterministic low IDs)
+        var personaSeeder = new PersonaSeeder(db, personaSeedConfig);
+        var personas = await personaSeeder.SeedAsync(ct);
+
+        // 4. Random attorneys (fill out the rest of the firm)
         var attorneyGen = new AttorneyGenerator(_rng);
-        var attorneys = attorneyGen.GenerateMany(_profile.AttorneyCount, practiceGroups).ToList();
-        await db.Attorneys.AddRangeAsync(attorneys, ct);
+        var randomAttorneys = attorneyGen.GenerateMany(_profile.AttorneyCount, practiceGroups).ToList();
+        await db.Attorneys.AddRangeAsync(randomAttorneys, ct);
         await db.SaveChangesAsync(ct);
 
-        // 4. Clients
+        var attorneys = new List<Attorney> { personas.Harvey, personas.Kim, personas.Alan };
+        attorneys.AddRange(randomAttorneys);
+
+        // 5. Clients
         var clientGen = new ClientGenerator(_rng);
         var clients = clientGen.GenerateMany(_profile.ClientCount).ToList();
         await db.Clients.AddRangeAsync(clients, ct);
         await db.SaveChangesAsync(ct);
 
-        // 5. Cases + related data
+        // 6. Cases + related data
         var caseGen = new CaseGenerator(_rng);
         var docGen = new DocumentGenerator(_rng);
         var calGen = new CalendarGenerator(_rng);

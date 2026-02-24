@@ -172,9 +172,32 @@ npx @modelcontextprotocol/inspector dotnet run --no-launch-profile --project src
 
 ---
 
+## Transport Modes
+
+The server supports two transport modes, configured by the `Transport` setting in `appsettings`:
+
+| Transport | Host type | When to use |
+|---|---|---|
+| `stdio` (default) | Generic Host | MCP clients that launch the server as a subprocess (Claude Desktop, VS Code, Inspector stdio) |
+| `http` | ASP.NET Core WebApplication | Browser-based testing, authenticated sessions, deployed environments |
+
+Set `"Transport": "http"` in `appsettings.Development.json` to run with Kestrel. The MCP endpoint is exposed at `http://localhost:5000/mcp` (configurable via the `Kestrel` section).
+
+## Authenticated Testing
+
+When `UseAuth=true` and `Transport=http`, the server validates Entra ID Bearer tokens and resolves the caller's identity from the database. See the dedicated guide:
+
+**[Testing Authentication with MCP Inspector](./local-mcp-inspect-auth.md)** — step-by-step instructions for acquiring persona tokens, connecting the Inspector with auth, and verifying that different identities produce different results.
+
+See also [docs/auth-config.md](./auth-config.md) for the Azure app registration and appsettings setup that must be completed first.
+
+---
+
 ## Related
 
 - [src/README.md](../src/README.md) — project structure and build instructions
+- [docs/auth-config.md](./auth-config.md) — Entra ID authentication setup
+- [docs/local-mcp-inspect-auth.md](./local-mcp-inspect-auth.md) — auth testing with MCP Inspector
 - [docs/arch/mcp.md](./arch/mcp.md) — MCP protocol overview
 - [ADR-004](../proj-mgmt/decisions/004-dual-transport-web-api-primary.md) — dual transport decision (stdio + HTTP)
 - [Transport research](../proj-mgmt/epics/01-foundation/1.1.2-configure-mcp-skeleton/RESEARCH-stdio-vs-http-transport.md) — stdio vs HTTP analysis

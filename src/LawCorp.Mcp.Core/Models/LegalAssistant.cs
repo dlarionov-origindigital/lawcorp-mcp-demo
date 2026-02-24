@@ -8,6 +8,7 @@ public class LegalAssistant
     public string Email { get; set; } = string.Empty;
     public int AssignedAttorneyId { get; set; }
     public DateOnly HireDate { get; set; }
+    public string? EntraObjectId { get; set; }
 
     public Attorney AssignedAttorney { get; set; } = null!;
 }

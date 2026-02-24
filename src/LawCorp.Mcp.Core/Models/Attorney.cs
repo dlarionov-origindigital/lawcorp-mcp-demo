@@ -13,6 +13,13 @@ public class Attorney
     public DateOnly HireDate { get; set; }
     public bool IsActive { get; set; } = true;
 
+    /// <summary>
+    /// Entra ID Object ID (<c>oid</c> claim). Nullable for backwards compatibility
+    /// with demo/seed data. When populated, used to resolve the attorney from an
+    /// inbound JWT during authenticated requests.
+    /// </summary>
+    public string? EntraObjectId { get; set; }
+
     public PracticeGroup PracticeGroup { get; set; } = null!;
     public ICollection<CaseAssignment> CaseAssignments { get; set; } = new List<CaseAssignment>();
     public ICollection<TimeEntry> TimeEntries { get; set; } = new List<TimeEntry>();

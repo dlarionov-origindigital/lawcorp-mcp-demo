@@ -1,4 +1,7 @@
 {
+  "Transport": "http",
+  "UseAuth": true,
+  "SeedMockData": true,
   "Logging": {
     "LogLevel": {
       "Default": "Debug",
@@ -7,6 +10,19 @@
     }
   },
   "ConnectionStrings": {
-    "LawCorpDb": "Server=.\\SQLEXPRESS;Database=LawCorpDev;Trusted_Connection=True;TrustServerCertificate=True;"
+    "LawCorpDb": "Server=.\\SQLEXPRESS;Database=LawCorpLocal;Trusted_Connection=True;TrustServerCertificate=True;"
+  },
+  "Kestrel": {
+    "Endpoints": {
+      "Http": {
+        "Url": "http://localhost:5000"
+      }
+    }
+  },
+  "AzureAd": {
+    "Instance": "https://login.microsoftonline.com/",
+    "TenantId": "YOUR_TENANT_ID",
+    "ClientId": "YOUR_CLIENT_ID",
+    "ClientSecret": "YOUR_CLIENT_SECRET"
   }
 }

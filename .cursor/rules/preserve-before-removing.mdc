@@ -1,0 +1,29 @@
+---
+description: Always preserve user data before removing or relocating it
+alwaysApply: true
+---
+
+# Preserve Before Removing
+
+When refactoring moves data from one location to another (e.g. extracting config from a tracked file into a gitignored file), **write the destination first with the real values, then remove from the source**.
+
+## Rules
+
+1. **Never delete or overwrite user-supplied data** (credentials, OIDs, connection strings, tenant-specific values) without first writing it to the new target location.
+2. **Order of operations**: create the populated destination file → verify it exists → then strip the values from the source file.
+3. **Template files are not copies.** A `.example` file with placeholders does not preserve the user's actual values. The real populated file must be created as well.
+4. If the destination is gitignored, call it out explicitly so the user knows their data now lives only in an untracked file.
+
+## Example
+
+```
+# ✅ GOOD — data preserved before removal
+1. Write persona-seed.json with the user's real OIDs and emails
+2. Write persona-seed.json.example with placeholders (tracked)
+3. Remove the hardcoded values from auth-config.md
+
+# ❌ BAD — data lost
+1. Write persona-seed.json.example with placeholders
+2. Remove the hardcoded values from auth-config.md
+3. User has to manually reconstruct persona-seed.json
+```

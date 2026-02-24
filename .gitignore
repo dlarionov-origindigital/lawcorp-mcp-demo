@@ -18,10 +18,12 @@ bld/
 # Local environment configuration (contains connection strings)
 ###########################################################
 
-# appsettings.Development.json
-# appsettings.*.json
-# !appsettings.json
-# !appsettings.*.json.example
+ appsettings.Development.json
+ appsettings.*.json
+ !appsettings.json
+ !appsettings.*.json.example
+ persona-seed.json
+ !persona-seed.json.example
 
 ###########################################################
 # .NET Core / SDK
@@ -105,3 +107,17 @@ _ReSharper*/
 publish/
 *.Publish.xml
 *.azurePubxml
+
+
+###########################################################
+# E2E Playwright tests — cached auth state & credentials
+###########################################################
+
+.auth/
+.env
+
+# Cursor Artifact
+verify-all/*
+
+# Mock Data Seed
+persona-seed.json

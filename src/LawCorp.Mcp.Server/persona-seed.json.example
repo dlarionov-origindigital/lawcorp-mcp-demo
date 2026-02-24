@@ -1,0 +1,28 @@
+{
+  "PersonaSeed": {
+    "HarveySpecter": {
+      "Email": "harvey@yourtenant.onmicrosoft.com",
+      "EntraObjectId": "00000000-0000-0000-0000-000000000001"
+    },
+    "KimWexler": {
+      "Email": "kim@yourtenant.onmicrosoft.com",
+      "EntraObjectId": "00000000-0000-0000-0000-000000000002"
+    },
+    "AlanShore": {
+      "Email": "alan@yourtenant.onmicrosoft.com",
+      "EntraObjectId": "00000000-0000-0000-0000-000000000003"
+    },
+    "ErinBrockovich": {
+      "Email": "erin@yourtenant.onmicrosoft.com",
+      "EntraObjectId": "00000000-0000-0000-0000-000000000004"
+    },
+    "ElleWoods": {
+      "Email": "elle@yourtenant.onmicrosoft.com",
+      "EntraObjectId": "00000000-0000-0000-0000-000000000005"
+    },
+    "VinnyGambini": {
+      "Email": "vinny@yourtenant.onmicrosoft.com",
+      "EntraObjectId": "00000000-0000-0000-0000-000000000006"
+    }
+  }
+}

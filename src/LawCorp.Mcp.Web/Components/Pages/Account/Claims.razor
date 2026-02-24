@@ -1,0 +1,61 @@
+@page "/account/claims"
+
+<PageTitle>Claims</PageTitle>
+
+<h1 class="lc-page-title">JWT Claims</h1>
+
+<AuthorizeView>
+    <Authorized>
+        <p class="lc-page-subtitle">
+            Claims from the authenticated user's token. Use this page to verify that
+            app roles, Object ID, and scopes are present after Entra ID sign-in.
+        </p>
+
+        <FluentCard Style="width: 100%; overflow-x: auto;">
+            <table class="lc-claims-table">
+                <thead>
+                    <tr>
+                        <th>Claim Type</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var claim in context.User.Claims.OrderBy(c => c.Type))
+                    {
+                        <tr>
+                            <td>@ShortenClaimType(claim.Type)</td>
+                            <td>@claim.Value</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </FluentCard>
+
+        <p style="margin-top: var(--lc-space-md); font-size: 12px; color: var(--lc-color-text-secondary);">
+            @context.User.Claims.Count() claims total
+        </p>
+    </Authorized>
+    <NotAuthorized>
+        <div class="lc-info-banner--muted lc-info-banner">
+            Sign in to view your JWT claims.
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private static string ShortenClaimType(string type)
+    {
+        const string xmlSchema = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/";
+        const string msIdentity = "http://schemas.microsoft.com/identity/claims/";
+        const string msRole = "http://schemas.microsoft.com/ws/2008/06/identity/claims/";
+
+        if (type.StartsWith(xmlSchema))
+            return type[xmlSchema.Length..];
+        if (type.StartsWith(msIdentity))
+            return "ms:" + type[msIdentity.Length..];
+        if (type.StartsWith(msRole))
+            return "ms:" + type[msRole.Length..];
+
+        return type;
+    }
+}

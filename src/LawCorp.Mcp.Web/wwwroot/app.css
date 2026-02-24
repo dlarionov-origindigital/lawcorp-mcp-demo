@@ -1,0 +1,333 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Law-Corp Design System
+   ═══════════════════════════════════════════════════════════════════════════
+   All custom tokens prefixed --lc-. Fluent UI tokens (--neutral-*, --accent-*)
+   are inherited from FluentDesignTheme and should not be redefined here.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Brand Tokens ──────────────────────────────────────────────────────── */
+:root {
+    --lc-color-brand-primary: #1b3a5c;
+    --lc-color-brand-accent: #c5973a;
+    --lc-color-brand-light: #e8eef4;
+    --lc-color-brand-dark: #0e2238;
+    --lc-color-surface: #ffffff;
+    --lc-color-surface-secondary: #f5f5f5;
+    --lc-color-text-primary: #1a1a1a;
+    --lc-color-text-secondary: #616161;
+    --lc-color-text-inverse: #ffffff;
+    --lc-color-border: #e0e0e0;
+    --lc-color-success: #107c10;
+    --lc-color-danger: #d13438;
+
+    --lc-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
+    --lc-font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+
+    --lc-space-xs: 4px;
+    --lc-space-sm: 8px;
+    --lc-space-md: 16px;
+    --lc-space-lg: 24px;
+    --lc-space-xl: 32px;
+    --lc-space-2xl: 48px;
+
+    --lc-radius-sm: 4px;
+    --lc-radius-md: 8px;
+    --lc-radius-lg: 12px;
+
+    --lc-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+    --lc-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.12);
+    --lc-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.16);
+}
+
+/* ── Base Reset ────────────────────────────────────────────────────────── */
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--lc-font-family);
+    color: var(--lc-color-text-primary);
+    background: var(--lc-color-surface);
+    height: 100%;
+    -webkit-font-smoothing: antialiased;
+}
+
+h1:focus { outline: none; }
+
+/* ── Layout Shell ──────────────────────────────────────────────────────── */
+.lc-header {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0 var(--lc-space-lg);
+    gap: var(--lc-space-md);
+}
+
+.lc-header__title {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+}
+
+.lc-footer {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--lc-space-lg);
+    font-size: 12px;
+    color: var(--lc-color-text-secondary);
+}
+
+.lc-page {
+    max-width: 960px;
+}
+
+/* ── Page Titles ───────────────────────────────────────────────────────── */
+.lc-page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--lc-color-brand-primary);
+    margin: 0 0 var(--lc-space-xs) 0;
+    letter-spacing: -0.02em;
+}
+
+.lc-page-subtitle {
+    font-size: 16px;
+    color: var(--lc-color-text-secondary);
+    margin: 0 0 var(--lc-space-lg) 0;
+    font-weight: 400;
+}
+
+/* ── Identity Card ─────────────────────────────────────────────────────── */
+.lc-identity-card {
+    display: flex;
+    align-items: center;
+    gap: var(--lc-space-md);
+    padding: var(--lc-space-lg);
+    background: var(--lc-color-brand-light);
+    border-radius: var(--lc-radius-md);
+    border-left: 4px solid var(--lc-color-brand-primary);
+}
+
+.lc-identity-card__details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--lc-space-xs);
+}
+
+.lc-identity-card__name {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--lc-color-brand-dark);
+}
+
+.lc-identity-card__role {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    background: var(--lc-color-brand-primary);
+    color: var(--lc-color-text-inverse);
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    width: fit-content;
+}
+
+.lc-identity-card__email {
+    font-size: 13px;
+    color: var(--lc-color-text-secondary);
+}
+
+/* ── Capability Cards ──────────────────────────────────────────────────── */
+.lc-capability-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--lc-space-md);
+    margin-top: var(--lc-space-md);
+}
+
+.lc-capability-card {
+    padding: var(--lc-space-lg);
+    border: 1px solid var(--lc-color-border);
+    border-radius: var(--lc-radius-md);
+    background: var(--lc-color-surface);
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    gap: var(--lc-space-sm);
+}
+
+.lc-capability-card:hover {
+    box-shadow: var(--lc-shadow-md);
+    border-color: var(--lc-color-brand-accent);
+}
+
+.lc-capability-card__title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--lc-color-brand-primary);
+}
+
+.lc-capability-card__desc {
+    font-size: 13px;
+    color: var(--lc-color-text-secondary);
+    line-height: 1.5;
+    flex: 1;
+}
+
+.lc-capability-card__link {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--lc-color-brand-accent);
+    text-decoration: none;
+    margin-top: auto;
+}
+
+.lc-capability-card__link:hover {
+    text-decoration: underline;
+}
+
+/* ── Section Divider ───────────────────────────────────────────────────── */
+.lc-divider {
+    width: 100%;
+    height: 1px;
+    background: var(--lc-color-border);
+    margin: var(--lc-space-lg) 0;
+}
+
+/* ── Section Header ────────────────────────────────────────────────────── */
+.lc-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--lc-color-text-secondary);
+    margin: 0 0 var(--lc-space-sm) 0;
+}
+
+/* ── Info Banner ───────────────────────────────────────────────────────── */
+.lc-info-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--lc-space-sm);
+    padding: var(--lc-space-md) var(--lc-space-lg);
+    background: var(--lc-color-brand-light);
+    border-radius: var(--lc-radius-md);
+    border: 1px solid var(--lc-color-brand-primary);
+    color: var(--lc-color-brand-dark);
+    font-size: 14px;
+}
+
+.lc-info-banner--muted {
+    background: var(--lc-color-surface-secondary);
+    border-color: var(--lc-color-border);
+    color: var(--lc-color-text-secondary);
+}
+
+/* ── Claims Table ──────────────────────────────────────────────────────── */
+.lc-claims-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.lc-claims-table th {
+    text-align: left;
+    padding: var(--lc-space-sm) var(--lc-space-md);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--lc-color-text-secondary);
+    border-bottom: 2px solid var(--lc-color-border);
+    white-space: nowrap;
+}
+
+.lc-claims-table td {
+    padding: var(--lc-space-sm) var(--lc-space-md);
+    border-bottom: 1px solid var(--lc-color-border);
+    font-size: 13px;
+}
+
+.lc-claims-table td:first-child {
+    font-family: var(--lc-font-mono);
+    font-size: 12px;
+    white-space: nowrap;
+    color: var(--lc-color-text-secondary);
+}
+
+.lc-claims-table td:last-child {
+    word-break: break-all;
+}
+
+.lc-claims-table tr:hover {
+    background: var(--lc-color-surface-secondary);
+}
+
+/* ── Placeholder Page ──────────────────────────────────────────────────── */
+.lc-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--lc-space-2xl);
+    text-align: center;
+    color: var(--lc-color-text-secondary);
+}
+
+.lc-placeholder__title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--lc-color-brand-primary);
+    margin-bottom: var(--lc-space-sm);
+}
+
+.lc-placeholder__desc {
+    font-size: 14px;
+    max-width: 500px;
+    line-height: 1.6;
+}
+
+/* ── Blazor Error UI ───────────────────────────────────────────────────── */
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
+.blazor-error-boundary {
+    background: var(--lc-color-danger);
+    padding: 1rem 1rem 1rem 1.5rem;
+    color: white;
+    border-radius: var(--lc-radius-sm);
+}
+
+.blazor-error-boundary::after {
+    content: "An error has occurred.";
+}
+
+/* ── Form Validation ───────────────────────────────────────────────────── */
+.valid.modified:not([type=checkbox]) {
+    outline: 1px solid var(--lc-color-success);
+}
+
+.invalid {
+    outline: 1px solid var(--lc-color-danger);
+}
+
+.validation-message {
+    color: var(--lc-color-danger);
+    font-size: 13px;
+}

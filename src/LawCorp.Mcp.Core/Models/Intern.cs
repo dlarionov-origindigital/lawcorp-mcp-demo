@@ -11,6 +11,7 @@ public class Intern
     public int SupervisorId { get; set; }
     public DateOnly StartDate { get; set; }
     public DateOnly EndDate { get; set; }
+    public string? EntraObjectId { get; set; }
 
     public PracticeGroup PracticeGroup { get; set; } = null!;
     public Attorney Supervisor { get; set; } = null!;

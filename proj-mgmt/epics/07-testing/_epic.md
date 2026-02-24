@@ -47,6 +47,7 @@ CI gates on unit + integration. E2E tests against real infra are run manually or
 - [ ] Row-level security tests assert that a persona cannot retrieve entities outside their access scope
 - [ ] Field redaction tests assert that the Intern persona receives redacted content where the PRD specifies
 - [ ] Identity passthrough tests verify that each persona's identity produces correct access boundaries across both Graph and local DB resources ([ADR-005](../../decisions/005-oauth-identity-passthrough.md))
+- [ ] Manual E2E verification confirms two real Entra ID personas produce different tool results through the same MCP endpoint ([7.5.3](./7.5.3-manual-e2e-auth-verification.md))
 - [ ] Every MCP tool has at least one passing-access and one denied-access test using the appropriate persona
 - [ ] Health check and transport configuration smoke tests pass in CI
 - [ ] All unit + integration tests run in < 60 seconds in CI

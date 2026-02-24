@@ -1,0 +1,50 @@
+@inject IConfiguration Configuration
+
+@if (UseAuth)
+{
+    <AuthorizeView>
+        <Authorized>
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                <FluentPersona Name="@context.User.Identity?.Name"
+                               Initials="@GetInitials(context.User.Identity?.Name)"
+                               Size="28px" />
+                <span style="font-size: 13px; font-weight: 500; margin-left: 8px; color: var(--lc-color-text-inverse);">
+                    @context.User.Identity?.Name
+                </span>
+                @{
+                    var role = context.User.Claims.FirstOrDefault(c => c.Type == "roles")?.Value
+                            ?? context.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+                }
+                @if (!string.IsNullOrEmpty(role))
+                {
+                    <span class="lc-identity-card__role">@role</span>
+                }
+                <a href="MicrosoftIdentity/Account/SignOut" style="margin-left: 12px; text-decoration: none;">
+                    <FluentButton Appearance="Appearance.Stealth" Style="color: var(--lc-color-text-inverse);">Sign out</FluentButton>
+                </a>
+            </FluentStack>
+        </Authorized>
+        <NotAuthorized>
+            <a href="MicrosoftIdentity/Account/SignIn" style="text-decoration: none;">
+                <FluentButton Appearance="Appearance.Accent">Sign in</FluentButton>
+            </a>
+        </NotAuthorized>
+    </AuthorizeView>
+}
+else
+{
+    <FluentBadge Appearance="Appearance.Neutral" Style="opacity: 0.7;">Demo mode</FluentBadge>
+}
+
+@code {
+    private bool UseAuth => Configuration.GetValue<bool>("UseAuth");
+
+    private static string GetInitials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            ? $"{parts[0][0]}{parts[^1][0]}"
+            : $"{parts[0][0]}";
+    }
+}
