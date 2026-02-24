@@ -1,0 +1,41 @@
+using LawCorp.Mcp.Core.Models;
+
+namespace LawCorp.Mcp.MockData.Generators;
+
+public class TimeEntryGenerator(Random rng)
+{
+    private static readonly string[] Descriptions =
+    [
+        "Review and analysis of merger agreement draft",
+        "Client call regarding transaction timeline",
+        "Due diligence document review",
+        "Drafting representations and warranties",
+        "Research on Delaware corporate law precedents",
+        "Preparation of closing checklist",
+        "Negotiation of indemnification provisions",
+        "Review of regulatory filings",
+        "Preparation of board resolution",
+        "Conference call with opposing counsel"
+    ];
+
+    private int _nextId = 1;
+
+    public TimeEntry Generate(Attorney attorney, Case @case)
+    {
+        var date = @case.OpenDate.AddDays(rng.Next(0, 180));
+        var hours = Math.Round(0.5 + rng.NextDouble() * (attorney.Role == AttorneyRole.Associate ? 7.5 : 4.5), 1);
+
+        return new TimeEntry
+        {
+            Id = _nextId++,
+            AttorneyId = attorney.Id,
+            CaseId = @case.Id,
+            Date = date,
+            Hours = (decimal)hours,
+            Description = Descriptions[rng.Next(Descriptions.Length)],
+            BillableRate = attorney.HourlyRate,
+            Billable = rng.NextDouble() < 0.85,
+            Status = TimeEntryStatus.Submitted
+        };
+    }
+}

@@ -1,0 +1,48 @@
+using LawCorp.Mcp.Core.Models;
+using LawCorp.Mcp.MockData.Partials;
+
+namespace LawCorp.Mcp.MockData.Generators;
+
+public class AttorneyGenerator(Random rng)
+{
+    private static readonly AttorneyRole[] Roles = [AttorneyRole.Partner, AttorneyRole.Associate, AttorneyRole.OfCounsel];
+    private static readonly decimal[] PartnerRates = [650m, 750m, 850m, 950m, 1050m];
+    private static readonly decimal[] AssociateRates = [300m, 350m, 400m, 450m, 500m];
+    private static readonly decimal[] OfCounselRates = [450m, 500m, 550m, 600m];
+
+    public Attorney Generate(int id, int practiceGroupId)
+    {
+        var role = id <= 10 ? AttorneyRole.Partner
+            : id <= 60 ? AttorneyRole.Associate
+            : AttorneyRole.OfCounsel;
+
+        var firstName = FirstNames.Attorney[rng.Next(FirstNames.Attorney.Length)];
+        var lastName = LastNames.Attorney[rng.Next(LastNames.Attorney.Length)];
+        var rates = role == AttorneyRole.Partner ? PartnerRates
+            : role == AttorneyRole.Associate ? AssociateRates
+            : OfCounselRates;
+
+        return new Attorney
+        {
+            Id = id,
+            FirstName = firstName,
+            LastName = lastName,
+            Email = $"{firstName.ToLower()}.{lastName.ToLower()}@lawcorp.com",
+            BarNumber = $"{rng.Next(100000, 999999)}",
+            Role = role,
+            PracticeGroupId = practiceGroupId,
+            HourlyRate = rates[rng.Next(rates.Length)],
+            HireDate = DateOnly.FromDateTime(DateTime.Today.AddYears(-rng.Next(1, 20))),
+            IsActive = true
+        };
+    }
+
+    public IEnumerable<Attorney> GenerateMany(int count, IList<PracticeGroup> practiceGroups)
+    {
+        for (var i = 1; i <= count; i++)
+        {
+            var group = practiceGroups[rng.Next(practiceGroups.Count)];
+            yield return Generate(i, group.Id);
+        }
+    }
+}

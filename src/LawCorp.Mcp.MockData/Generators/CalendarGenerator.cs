@@ -1,0 +1,45 @@
+using LawCorp.Mcp.Core.Models;
+
+namespace LawCorp.Mcp.MockData.Generators;
+
+public class CalendarGenerator(Random rng)
+{
+    private static readonly HearingType[] HearingTypes = [HearingType.Motion, HearingType.Pretrial, HearingType.Status];
+    private static readonly DeadlineType[] DeadlineTypes = [DeadlineType.Filing, DeadlineType.Discovery, DeadlineType.Response];
+    private int _nextHearingId = 1;
+    private int _nextDeadlineId = 1;
+
+    public Hearing GenerateHearing(Case @case, Court court)
+    {
+        var hearingDate = @case.OpenDate.ToDateTime(TimeOnly.MinValue).AddDays(rng.Next(30, 365));
+        return new Hearing
+        {
+            Id = _nextHearingId++,
+            CaseId = @case.Id,
+            CourtId = court.Id,
+            DateTime = hearingDate,
+            Type = HearingTypes[rng.Next(HearingTypes.Length)],
+            Location = court.Name,
+            Notes = string.Empty
+        };
+    }
+
+    public Deadline GenerateDeadline(Case @case, Attorney assignedTo)
+    {
+        var dueDate = @case.OpenDate.AddDays(rng.Next(30, 270));
+        var urgency = rng.NextDouble() < 0.1 ? DeadlineUrgency.Critical
+            : rng.NextDouble() < 0.3 ? DeadlineUrgency.High
+            : DeadlineUrgency.Normal;
+
+        return new Deadline
+        {
+            Id = _nextDeadlineId++,
+            CaseId = @case.Id,
+            Title = $"{DeadlineTypes[rng.Next(DeadlineTypes.Length)]} Deadline — {@case.Title}",
+            DueDate = dueDate,
+            Urgency = urgency,
+            Type = DeadlineTypes[rng.Next(DeadlineTypes.Length)],
+            AssignedToId = assignedTo.Id
+        };
+    }
+}

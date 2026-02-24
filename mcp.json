@@ -1,0 +1,10 @@
+{
+    "inputs": [],
+    "servers": {
+        "MyFirstMCP": {
+            "type": "stdio",
+            "command": "C:\\Dev\\Origin\\research\\mcp\\src\\LawCorp.Mcp.Server\\bin\\Debug\\net9.0\\LawCorp.Mcp.Server.exe",
+            "args": []
+        }
+    }
+}

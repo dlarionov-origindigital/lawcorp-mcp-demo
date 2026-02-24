@@ -1,0 +1,27 @@
+using LawCorp.Mcp.Core.Models;
+using LawCorp.Mcp.MockData.Partials;
+
+namespace LawCorp.Mcp.MockData.Generators;
+
+public class ResearchGenerator(Random rng)
+{
+    private int _nextId = 1;
+
+    public ResearchMemo Generate(Case @case, Attorney author)
+    {
+        var topic = LegalTopics.MandA[rng.Next(LegalTopics.MandA.Length)];
+        var jurisdiction = Jurisdictions.All[rng.Next(Jurisdictions.All.Length)];
+
+        return new ResearchMemo
+        {
+            Id = _nextId++,
+            CaseId = @case.Id,
+            AuthorId = author.Id,
+            Topic = topic,
+            Findings = LoremLegal.Generate(rng, 4),
+            Jurisdiction = jurisdiction,
+            CreatedDate = @case.OpenDate.ToDateTime(TimeOnly.MinValue).AddDays(rng.Next(1, 90)),
+            Tags = string.Join(",", LegalTopics.Corporate.Take(2))
+        };
+    }
+}
