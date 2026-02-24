@@ -66,4 +66,6 @@ See [`src/README.md`](./src/README.md) for full project structure and setup inst
 
 - Never commit directly — all commits are made by the developer
 - See [`CLAUDE.md`](./CLAUDE.md) for Claude Code working instructions
-- See [`proj-mgmt/README.md`](./proj-mgmt/README.md) for how work is tracked
+- See [`CLAUDE-WORKFLOW.md`](./CLAUDE-WORKFLOW.md) for Claude agent workflow rules
+- See [`COPILOT-RULES.md`](./COPILOT-RULES.md) for GitHub Copilot and team AI assistant rules
+- See [`proj-mgmt/README.md`](./proj-mgmt/README.md) for how work is tracked and organized

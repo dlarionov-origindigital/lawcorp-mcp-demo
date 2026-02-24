@@ -14,28 +14,36 @@ Build an enterprise-grade MCP (Model Context Protocol) server as a .NET Web API 
 
 | # | Epic | Features | Tasks | Total Cards |
 |---|---|---|---|---|
-| 1 | [Foundation & Infrastructure](./epics/01-foundation-infrastructure.md) | 3 | 7 | 10 |
-| 2 | [Data Model & Mock Data](./epics/02-data-model-mock-data.md) | 8 | 24 | 32 |
-| 3 | [MCP Tools](./epics/03-mcp-tools.md) | 7 | 28 | 28 |
-| 4 | [MCP Resources](./epics/04-mcp-resources.md) | 3 | 7 | 7 |
-| 5 | [MCP Prompts & Sampling](./epics/05-mcp-prompts-sampling.md) | 5 | 15 | 15 |
-| 6 | [Protocol Features & Deployment](./epics/06-protocol-deployment.md) | 4 | 12 | 12 |
-| | **Totals** | **30** | **93** | **104** |
+| 1 | [Foundation & Infrastructure](./epics/01-foundation/_epic.md) | 3 | 8 | 11 |
+| 2 | [Data Model & Mock Data](./epics/02-data-model/_epic.md) | 8 | 24 | 32 |
+| 3 | [MCP Tools](./epics/03-mcp-tools/_epic.md) | 7 | 28 | 28 |
+| 4 | [MCP Resources](./epics/04-mcp-resources/_epic.md) | 3 | 7 | 7 |
+| 5 | [MCP Prompts & Sampling](./epics/05-mcp-prompts-sampling/_epic.md) | 5 | 15 | 15 |
+| 6 | [Protocol Features & Deployment](./epics/06-protocol-deployment/_epic.md) | 4 | 12 | 12 |
+| 7 | [End-to-End Testing](./epics/07-testing/_epic.md) | 5 | 15 | 20 |
+| | **Totals** | **35** | **109** | **125** |
 
 ---
 
 ## Epic Dependency Graph
 
 ```
-Epic 1: Foundation & Infrastructure
+Epic 1: Foundation & Infrastructure  (includes IFirmIdentityContext — 1.3.5)
   ├─► Epic 2: Data Model & Mock Data
   │     ├─► Epic 3: MCP Tools  ──────────┐
   │     ├─► Epic 4: MCP Resources         ├─► Epic 6: Protocol Features & Deployment
   │     └─► Epic 5: MCP Prompts & Sampling┘
   └─► Epic 6: Protocol Features (cross-cutting, iterative)
+  │
+  ├─► Epic 7: End-to-End Testing (7.1 + 7.2 + 7.3 can start after Epic 1)
+        └─► (7.4 Tool E2E blocked until Epic 3 tools exist)
 ```
 
 **Critical path:** Epic 1 → Epic 2 → Epic 3 (tools are the bulk of the work)
+
+**Testing path:** Epic 7 features 7.1–7.3 can begin in parallel with Epic 2. Feature 7.4 (Tool E2E) is blocked until Epic 3 tools are implemented.
+
+**ADR note:** The host has been migrated from Generic Host console app to ASP.NET Core Web API (see [ADR-004](./decisions/004-dual-transport-web-api-primary.md)). stdio remains available via `Transport:Mode=stdio` configuration. This enables `WebApplicationFactory`-based E2E tests in Epic 7 and eliminates the planned host migration in Epic 6.
 
 ---
 

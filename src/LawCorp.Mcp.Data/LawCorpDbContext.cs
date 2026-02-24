@@ -47,5 +47,14 @@ public class LawCorpDbContext : DbContext
 
         // Apply all entity configurations from this assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(LawCorpDbContext).Assembly);
+
+        // Prevent SQL Server "multiple cascade paths" errors caused by entities
+        // with foreign keys to both Case and Attorney (e.g. CaseAssignment, TimeEntry).
+        // Cascades are handled in application logic instead.
+        foreach (var fk in modelBuilder.Model.GetEntityTypes()
+            .SelectMany(e => e.GetForeignKeys()))
+        {
+            fk.DeleteBehavior = DeleteBehavior.Restrict;
+        }
     }
 }

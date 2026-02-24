@@ -6,47 +6,131 @@ This folder is the single source of truth for all product decisions, work items,
 
 ---
 
+## Quick Navigation
+
+- **[WORKFLOW.md](./WORKFLOW.md)** — How bugs, stories, and tasks are organized in the hierarchy
+- **[CLAUDE-WORKFLOW.md](../CLAUDE-WORKFLOW.md)** — Rules for the Claude Code Agent
+- **[prd.md](./prd.md)** — Product requirements, domain model, capability surface
+- **[project-plan.md](./project-plan.md)** — WBS, detailed phase plan, epic dependency graph
+- **[decisions/](./decisions/)** — Architecture Decision Records (ADRs)
+
+---
+
 ## Folder Structure
 
 ```
 proj-mgmt/
 ├── README.md                        ← This file
-├── prd.md                           ← Product requirements, domain model, capability surface
-├── project-plan.md                  ← WBS, phase plan, epic dependency graph
+├── WORKFLOW.md                      ← How to organize work in the hierarchy
+├── prd.md                           ← Product requirements, domain model
+├── project-plan.md                  ← WBS, phase plan, epic dependencies
 ├── decisions/                       ← Architecture Decision Records (ADRs)
 │   ├── README.md                    ← ADR format and index
 │   └── NNN-title.md                 ← One file per decision
+│
 └── epics/
     └── NN-epic-name/
-        ├── _epic.md                 ← Epic goal, feature index with status
-        ├── N.M-feature-name.md      ← Feature: goal, items index with status
-        └── N.M.P-item-title.md      ← Story / Task / Bug: full detail
+        ├── _epic.md                 ← Epic goal, features table with status
+        ├── N.M-feature-name.md      ← Feature spec, items table with status
+        ├── N.M.P-item-title.md      ← Story / Task / Bug: full detail
+        │
+        └── N.M.P-item-name/         ← Optional: folder for complex items
+            ├── N.M.P-item-name.md   ← Main item file
+            ├── bugs/
+            │   ├── N.M.P.1-bug.md   ← Bug as sub-item (hierarchical numbering)
+            │   └── N.M.P.2-bug.md
+            ├── research/            ← Investigation files
+            └── examples/            ← Code examples
 ```
 
-### Naming conventions
+### The Bug Hierarchy
 
-| Level | Pattern | Example |
-|---|---|---|
-| Epic folder | `NN-slug/` | `01-foundation/` |
-| Epic index | `_epic.md` | sorts to top of folder |
-| Feature file | `N.M-slug.md` | `1.2-authentication.md` |
-| Story / Task / Bug | `N.M.P-slug.md` | `1.2.1-entra-id-middleware.md` |
+**Key principle:** Bugs are stored in the same epic folder tree as the feature/item they relate to. This creates a **living history** where you can start at an epic, drill down to a feature, see all tasks and bugs in one logical place.
 
-The numeric prefix in `N.M.P` encodes the hierarchy: epic 1, feature 2, item 1. Alphabetical file sort gives natural reading order.
+**Simple bug** (single issue):
+```
+epics/02-data-model/
+  2.1-people-org-entities.md
+  2.1.1-practice-group-entity.md
+  2.1.1-bug-validation-edge-case.md      ← Standalone bug file
+```
+
+**Complex item with multiple bugs** (created folder structure):
+```
+epics/02-data-model/2.1.1-practice-group/
+  2.1.1-practice-group-entity.md         ← Main feature file
+  bugs/
+    2.1.1.1-migration-seed-sql-failure.md  ← First bug (sub-item .1)
+    2.1.1.2-validation-edge-case.md        ← Second bug (sub-item .2)
+  research/
+    schema-analysis.md                      ← Investigation notes
+```
+
+See [**WORKFLOW.md**](./WORKFLOW.md) for detailed organization rules and bug lifecycle.
+
+---
+
+## Naming Conventions
+
+| Level | Pattern | Example | Sorted |
+|---|---|---|---|
+| Epic | `NN-slug/` | `01-foundation/` | Numerically |
+| Epic index | `_epic.md` | `_epic.md` | *First (underscore sorts first) |
+| Feature | `N.M-slug.md` | `1.2-auth.md` | Numerically |
+| Story / Task / Bug | `N.M.P-slug.md` | `1.2.1-mfa-support.md` | Numerically |
+| Bug sub-item | `N.M.P.X-slug.md` | `2.1.1.1-sql-error.md` | Numerically |
+
+**Why this naming?**
+
+- Numeric prefixes encode the hierarchy: epic N, feature M, item P, bug version X
+- Alphabetical file sort = natural reading order (numerically, then underscore, then alpha)
+- `_epic.md` sorts to folder top — epic overview always visible first
 
 ---
 
 ## Work Item Hierarchy
 
 ```
-Epic
-└── Feature
-    ├── Story   — user-facing value; "As a... I want... So that..."
-    ├── Task    — technical step; no direct user value on its own
-    └── Bug     — defect in previously-working or expected behavior
+Epic (large body of work unified by one goal)
+└── Feature (coherent capability, multiple user stories/tasks)
+    ├── Story (unit of user value; "As a...")
+    ├── Task (technical enabling work)
+    └── Bug (defect in expected behavior; lives alongside stories/tasks)
 ```
 
-### Definitions
+### Definitions & Status
+
+| Level | Scope | Status Options | Lives in |
+|---|---|---|---|
+| **Epic** | Large body of work. Spans multiple phases. | BACKLOG, IN PROGRESS, DONE | `_epic.md` |
+| **Feature** | Coherent capability slice. Deliverable together. | BACKLOG, IN PROGRESS, DONE | `N.M-slug.md` |
+| **Story** | Unit of user-facing value. "As a... I want... So that..." | BACKLOG, TODO, IN PROGRESS, DONE, BLOCKED | `N.M.P-slug.md` |
+| **Task** | Technical enabling work. No direct user value. | BACKLOG, TODO, IN PROGRESS, DONE, BLOCKED | `N.M.P-slug.md` |
+| **Bug** | Defect in working or expected behavior. Emerges during/after work. | BACKLOG, TODO, IN PROGRESS, DONE, BLOCKED | `N.M.P-slug.md` or `bugs/N.M.P.X-slug.md` |
+
+**Status fields** go in the header block of every file. Update them to track progress. Epic/feature status is derived from child items but set manually after reviewing child statuses.
+
+---
+
+## Tracer Bullet: From Epic to Bug
+
+Here's how to navigate the hierarchy:
+
+**Start:** Epic folder `epics/01-foundation/`
+
+1. Open `_epic.md` → See all features in a table  
+2. Click feature `1.3-authorization.md` → See all stories/tasks as table  
+3. Click story `1.3.1-role-based-handler.md` → See implementation detail & acceptance criteria  
+4. If complex: folder `1.3.1-role-based-handler/` → see `bugs/` → find `1.3.1.1-null-ref-exception.md`  
+5. Read bug: problem statement, root cause, solution applied, status  
+
+**Result:** Clean trail from epic goal → feature → story → implementation → bug found + fix (all in one logical place)
+
+---
+
+## File Formats
+
+### Epic index (`_epic.md`)
 
 | Level | Scope | Lives in |
 |---|---|---|

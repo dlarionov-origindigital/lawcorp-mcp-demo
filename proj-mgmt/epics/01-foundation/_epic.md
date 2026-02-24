@@ -7,7 +7,7 @@
 
 | ID | Feature | Status |
 |---|---|---|
-| [1.1](./1.1-solution-structure.md) | Solution & Project Structure | IN PROGRESS |
+| [1.1](./1.1-solution-structure.md) | Solution & Project Structure | DONE |
 | [1.2](./1.2-authentication.md) | Authentication — Microsoft Entra ID | BACKLOG |
 | [1.3](./1.3-authorization.md) | Custom Authorization Layer | BACKLOG |
 
