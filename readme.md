@@ -20,14 +20,14 @@ The Law-Corp MCP server exposes a fictional law firm's data and workflows to an 
 dotnet build src/LawCorp.Mcp.sln
 
 # Run the MCP server (stdio transport)
-dotnet run --project src/LawCorp.Mcp.Server
+dotnet run --no-launch-profile --project src/LawCorp.Mcp.Server
 ```
 
 **Test via stdio** — send raw JSON-RPC to verify the echo tool works:
 
 ```bash
 printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}\n{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}\n{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"Echo","arguments":{"message":"hello"}}}\n' \
-  | timeout 15 dotnet run --project src/LawCorp.Mcp.Server 2>/dev/null
+  | timeout 15 dotnet run --no-launch-profile --project src/LawCorp.Mcp.Server 2>/dev/null
 ```
 
 **Connect to Claude Desktop** — add to your `claude_desktop_config.json`:
@@ -36,23 +36,23 @@ printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion
 {
   "mcpServers": {
     "law-corp": {
-      "command": "C:\\Dev\\Origin\\research\\mcp\\src\\LawCorp.Mcp.Server\\bin\\Debug\\net9.0\\LawCorp.Mcp.Server.exe"
+      "command": "dotnet",
+      "args": ["run", "--no-launch-profile", "--project", "C:\\Dev\\research\\mcp\\src\\LawCorp.Mcp.Server"]
     }
   }
 }
 ```
 
 See [`src/README.md`](./src/README.md) for full project structure and setup instructions.
+See [`docs/local-dev.md`](./docs/local-dev.md) for the complete local development guide (MCP Inspector, Claude Desktop, VS Code/Cursor, Claude Code).
 
 ## Repo Layout
 
 | Folder | Purpose |
 |---|---|
 | [`src/`](./src/README.md) | .NET solution — MCP server, domain model, data layer, mock data, tests |
-| [`docs/`](./docs/README.md) | Research notes and reference material on MCP, auth, and architecture |
+| [`docs/`](./docs/README.md) | Research notes, reference material, and [local dev guide](./docs/local-dev.md) |
 | [`proj-mgmt/`](./proj-mgmt/README.md) | Epics, features, stories, tasks, and architectural decisions |
-| [`images/`](./images/README.md) | Screenshots and diagrams |
-| [`backlog/`](./backlog/README.md) | Raw ideas and unrefined notes not yet promoted to proj-mgmt |
 
 ## Tech Stack
 

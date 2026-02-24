@@ -10,6 +10,11 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 
+// Ensure appsettings.json is found regardless of the caller's working directory.
+// MCP clients (Claude Desktop, Inspector, VS Code) launch the exe as a subprocess
+// whose CWD is not the bin directory. See bug 1.1.2.1.
+Directory.SetCurrentDirectory(AppContext.BaseDirectory);
+
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Logging.AddConsole(consoleLogOptions =>

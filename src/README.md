@@ -37,10 +37,10 @@ dotnet build LawCorp.Mcp.sln
 **Run the server**
 
 ```bash
-dotnet run --project LawCorp.Mcp.Server
+dotnet run --no-launch-profile --project LawCorp.Mcp.Server
 ```
 
-The server uses stdio transport — it is not an HTTP server. Connect via Claude Desktop or the MCP inspector tool.
+The server uses stdio transport — it is not an HTTP server. Connect via Claude Desktop or the MCP inspector tool. The `--no-launch-profile` flag is required to prevent `dotnet run` from printing launch profile info to stdout, which corrupts the JSON-RPC stream.
 
 **Run tests**
 

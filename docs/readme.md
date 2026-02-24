@@ -16,6 +16,12 @@ Research notes and reference material collected during this project. Nothing her
 - Architectural decisions → use `proj-mgmt/decisions/`
 - Source code → use `src/`
 
+## Guides
+
+| File | Contents |
+|---|---|
+| [`local-dev.md`](./local-dev.md) | **Local development guide** — MCP Inspector, Claude Desktop, VS Code/Cursor, Claude Code setup and troubleshooting |
+
 ## Subfolders
 
 | Folder | Contents |

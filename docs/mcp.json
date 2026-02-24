@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "law-corp": {
+      "command": "dotnet",
+      "args": ["run", "--no-launch-profile", "--project", "C:\\Dev\\research\\mcp\\src\\LawCorp.Mcp.Server"]
+    }
+  }
+}
