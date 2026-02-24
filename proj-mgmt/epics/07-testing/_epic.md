@@ -46,6 +46,7 @@ CI gates on unit + integration. E2E tests against real infra are run manually or
 - [ ] Authorization tests cover every (role × entity × operation) cell in the PRD 4.2 permissions matrix
 - [ ] Row-level security tests assert that a persona cannot retrieve entities outside their access scope
 - [ ] Field redaction tests assert that the Intern persona receives redacted content where the PRD specifies
+- [ ] Identity passthrough tests verify that each persona's identity produces correct access boundaries across both Graph and local DB resources ([ADR-005](../../decisions/005-oauth-identity-passthrough.md))
 - [ ] Every MCP tool has at least one passing-access and one denied-access test using the appropriate persona
 - [ ] Health check and transport configuration smoke tests pass in CI
 - [ ] All unit + integration tests run in < 60 seconds in CI

@@ -14,14 +14,14 @@ Build an enterprise-grade MCP (Model Context Protocol) server as a .NET Web API 
 
 | # | Epic | Features | Tasks | Total Cards |
 |---|---|---|---|---|
-| 1 | [Foundation & Infrastructure](./epics/01-foundation/_epic.md) | 3 | 8 | 11 |
+| 1 | [Foundation & Infrastructure](./epics/01-foundation/_epic.md) | 3 | 13 | 16 |
 | 2 | [Data Model & Mock Data](./epics/02-data-model/_epic.md) | 8 | 24 | 32 |
 | 3 | [MCP Tools](./epics/03-mcp-tools/_epic.md) | 7 | 28 | 28 |
 | 4 | [MCP Resources](./epics/04-mcp-resources/_epic.md) | 3 | 7 | 7 |
 | 5 | [MCP Prompts & Sampling](./epics/05-mcp-prompts-sampling/_epic.md) | 5 | 15 | 15 |
-| 6 | [Protocol Features & Deployment](./epics/06-protocol-deployment/_epic.md) | 4 | 12 | 12 |
-| 7 | [End-to-End Testing](./epics/07-testing/_epic.md) | 5 | 15 | 20 |
-| | **Totals** | **35** | **109** | **125** |
+| 6 | [Protocol Features & Deployment](./epics/06-protocol-deployment/_epic.md) | 4 | 13 | 13 |
+| 7 | [End-to-End Testing](./epics/07-testing/_epic.md) | 5 | 16 | 21 |
+| | **Totals** | **35** | **116** | **132** |
 
 ---
 
@@ -43,7 +43,9 @@ Epic 1: Foundation & Infrastructure  (includes IFirmIdentityContext — 1.3.5)
 
 **Testing path:** Epic 7 features 7.1–7.3 can begin in parallel with Epic 2. Feature 7.4 (Tool E2E) is blocked until Epic 3 tools are implemented.
 
-**ADR note:** The host has been migrated from Generic Host console app to ASP.NET Core Web API (see [ADR-004](./decisions/004-dual-transport-web-api-primary.md)). stdio remains available via `Transport:Mode=stdio` configuration. This enables `WebApplicationFactory`-based E2E tests in Epic 7 and eliminates the planned host migration in Epic 6.
+**ADR notes:**
+- The host has been migrated from Generic Host console app to ASP.NET Core Web API (see [ADR-004](./decisions/004-dual-transport-web-api-primary.md)). stdio remains available via `Transport:Mode=stdio` configuration. This enables `WebApplicationFactory`-based E2E tests in Epic 7 and eliminates the planned host migration in Epic 6.
+- OAuth identity passthrough is the canonical user-delegated access pattern (see [ADR-005](./decisions/005-oauth-identity-passthrough.md)). Every MCP tool call executes under the calling user's Entra ID identity. Downstream Graph resources (SharePoint, Calendar, Mail) are accessed via OBO token exchange; local database access is scoped by `IFirmIdentityContext` claim extraction. This is a core value proposition: "the MCP server can only do what the logged-in user can do."
 
 ---
 
@@ -58,8 +60,9 @@ Build the skeleton that everything depends on.
 3. **Mock data generator** — Build generator, seed the database
 4. **Authentication** — Entra ID token validation, OBO flow
 5. **Authorization layer** — Role-based handlers, row-level filters, field-level redaction, audit log
+6. **Identity passthrough** — Graph client with OBO provider, downstream resource access (SharePoint, Calendar), consent flow handling, database identity-scoped access ([ADR-005](./decisions/005-oauth-identity-passthrough.md))
 
-**Exit criteria:** Database seeded with realistic data, auth pipeline works end-to-end, role-based queries return correctly filtered results.
+**Exit criteria:** Database seeded with realistic data, auth pipeline works end-to-end, role-based queries return correctly filtered results, user identity flows through to Graph and local DB.
 
 ### Phase 2: Core Tools (Epic 3, features 3.1–3.3)
 

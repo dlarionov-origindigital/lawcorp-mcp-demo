@@ -39,3 +39,4 @@ What open questions remain?
 | [002](./002-ef-core-orm.md) | Use EF Core as the ORM with SQL Server | Accepted |
 | [003](./003-single-project-host.md) | Host MCP server as a single-process console app | Superseded by ADR-004 |
 | [004](./004-dual-transport-web-api-primary.md) | Adopt ASP.NET Core Web API as primary host; retain stdio as a configuration mode | Accepted |
+| [005](./005-oauth-identity-passthrough.md) | Use OAuth identity passthrough as the user-delegated access pattern | Accepted |
