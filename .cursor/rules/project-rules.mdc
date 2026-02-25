@@ -1,3 +1,8 @@
+---
+description: "Project rules - auto-synced from RULES.md"
+alwaysApply: true
+---
+
 <!-- AUTO-GENERATED from RULES.md -- do not edit. Run: powershell scripts/sync-agent-rules.ps1 -->
 
 # Project Rules

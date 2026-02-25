@@ -9,33 +9,58 @@
 
 This project uses AI coding assistants (Claude Code, Cursor, GitHub Copilot) as first-class contributors. To ensure every agent follows the same conventions — and that any developer can clone the repo and get consistent AI behavior immediately — all rules are stored in the repository itself.
 
-**Single source of truth:** [`RULES.md`](../CLAUDE.md) at the repo root. All other agent config files reference or replicate this file's core content.
-
 ---
 
-## Rule File Locations
+## Rules Architecture
 
-| Agent | Config File | Notes |
+### Single source of truth: `RULES.md`
+
+[`RULES.md`](../RULES.md) at the repo root contains **every** rule that governs AI agent behavior on this project — git workflow, code conventions, MCP-specific patterns, project management, and communication preferences.
+
+Agent-specific config files are **exact copies** of `RULES.md`, not summaries or subsets. This eliminates drift between agents and reduces maintenance to a single file.
+
+### Sync mechanism
+
+A PowerShell script copies `RULES.md` to each agent's expected location:
+
+```
+RULES.md  (edit here)
+  ├── .cursor/rules/project-rules.mdc   (Cursor — YAML frontmatter prepended)
+  ├── .rules/CLAUDE.md                  (Claude Code)
+  └── .github/copilot-instructions.md   (GitHub Copilot)
+```
+
+**To sync manually:**
+
+```bash
+powershell scripts/sync-agent-rules.ps1
+```
+
+**Automated sync:** A GitHub Action runs the script on every commit, so agent files never fall behind `RULES.md`. (The action also serves as a safety net — if a developer edits an agent file directly, the next commit overwrites it with the source of truth.)
+
+### Where each agent reads rules
+
+| Agent | File it reads | How it's loaded |
 |---|---|---|
-| Claude Code / Claude Desktop | [`CLAUDE.md`](../CLAUDE.md) | Auto-loaded by Claude Code from project root |
-| Cursor | [`.cursor/rules/project-workflow.mdc`](../.cursor/rules/project-workflow.mdc) | Loaded by Cursor automatically; `alwaysApply: true` |
-| Cursor | [`.cursor/rules/preserve-before-removing.mdc`](../.cursor/rules/preserve-before-removing.mdc) | Rule: always write destination before deleting source |
-| GitHub Copilot | [`.github/copilot-instructions.md`](../.github/copilot-instructions.md) | Loaded by Copilot Chat automatically |
-| Legacy (deprecated) | `.rules/CLAUDE.md`, `.rules/CLAUDE-WORKFLOW.md`, `.rules/COPILOT-RULES.md` | Superseded by `CLAUDE.md`; kept for historical reference |
+| Cursor | `.cursor/rules/project-rules.mdc` | Auto-loaded; `alwaysApply: true` frontmatter |
+| Claude Code | `.rules/CLAUDE.md` | Auto-loaded from project root |
+| GitHub Copilot | `.github/copilot-instructions.md` | Auto-loaded by Copilot Chat |
 
-### Rule of Thumb
+### Editing rules
 
-- **`CLAUDE.md`** is authoritative. Edit this file when the team agrees on a new convention.
-- Agent-specific files (`.cursor/rules/*.mdc`, `.github/copilot-instructions.md`) should stay lightweight — they point to `CLAUDE.md` and highlight only the most code-completion-relevant rules.
-- When in doubt, put it in `CLAUDE.md`.
+1. Edit `RULES.md` at the repo root
+2. Run `powershell scripts/sync-agent-rules.ps1`
+3. Commit all changed files (the GitHub Action will also run the sync as a safeguard)
+
+**Never edit the agent files directly** — changes will be overwritten on next sync.
 
 ---
 
 ## Global vs. Local Rules
 
-**Default: local (project) rules.** When an AI agent session produces a useful rule or convention, it goes into `CLAUDE.md` (or the appropriate agent-specific file), committed to the repository. This way every developer who clones the repo immediately gets the same AI behavior.
+**Default: local (project) rules.** When an AI session produces a useful convention, it goes into `RULES.md`, committed to the repo. Every developer who clones gets the same AI behavior immediately.
 
-**Exception: global user rules.** If a rule applies across many projects (e.g., "always use TypeScript strict mode"), the developer can add it to their global AI config (`~/.claude/CLAUDE.md` for Claude Code, or equivalent). This should be explicitly requested — the default is always local/project scope.
+**Exception: global user rules.** Rules that apply across many projects (e.g., "always use TypeScript strict mode") go in the developer's personal AI config (`~/.claude/CLAUDE.md`, Cursor global settings, etc.). This must be explicitly requested — the default is always project scope.
 
 ---
 
@@ -43,59 +68,40 @@ This project uses AI coding assistants (Claude Code, Cursor, GitHub Copilot) as 
 
 ### Claude Code
 
-Claude Code automatically loads `CLAUDE.md` from the project root. No additional setup is needed after cloning.
+Automatically loads `.rules/CLAUDE.md` from the project. No setup needed after cloning.
 
-**Verify:** Open the project in Claude Code — it will show "Loaded project instructions from CLAUDE.md."
+**Verify:** Open the project in Claude Code — it shows "Loaded project instructions."
 
 ### Cursor
 
-Cursor automatically picks up all `.mdc` files inside `.cursor/rules/` when `alwaysApply: true` is set in the frontmatter. No additional setup is needed after cloning.
+Automatically loads all `.mdc` files in `.cursor/rules/` with `alwaysApply: true`. No setup needed after cloning.
 
-**Verify:** Open Cursor → Settings → Rules — you should see the project rules loaded.
+**Verify:** Open Cursor → Settings → Rules — project rules should appear.
 
 ### GitHub Copilot (VS Code)
 
-GitHub Copilot Chat reads `.github/copilot-instructions.md` automatically when the file exists in the repository root. No additional setup is needed after cloning.
+Reads `.github/copilot-instructions.md` automatically. No setup needed after cloning.
 
-**Verify:** Open Copilot Chat and ask "What are the project coding conventions?" — it should reference the tool name and EF Core rules.
-
----
-
-## Core Conventions All Agents Follow
-
-### No AI Commits
-
-AI assistants never create git commits. They implement and verify code, then hand off to the developer. The developer owns the commit message and decides the logical unit of work.
-
-### Project Management as Documentation
-
-All work is tracked in `proj-mgmt/epics/NN-slug/`. Agents read the item file before coding and update it after. This creates a living record of decisions that future developers (and agents) can follow.
-
-### No Magic Strings for Tool Names
-
-MCP tool names are defined once in `src/LawCorp.Mcp.Core/McpToolName.cs`. Every agent is expected to use `McpToolName.X.Y` constants rather than raw string literals. This prevents drift between the permission matrix and tool registration.
-
-### Ask, Don't Guess
-
-When SDK internals are opaque (DLLs, closed-source packages), agents ask the developer rather than using decompilers or other indirect tooling.
+**Verify:** Ask Copilot Chat "What are the project coding conventions?" — it should reference tool name constants and EF Core rules.
 
 ---
 
-## Updating Rules
+## Core Conventions (Summary)
 
-1. Agree on the new convention (usually by noticing a pattern or fixing an inconsistency)
-2. Edit `CLAUDE.md` with the rule
-3. Mirror it in the relevant agent-specific file if it affects code completion
-4. Commit the rule change so all developers and future sessions benefit
+All conventions are defined in `RULES.md`. The key ones for quick reference:
+
+- **No git commits from AI** — implement, verify, hand off to developer
+- **No magic strings** — all enumerable strings use dedicated constant classes (`McpToolName`, `WebRoutes`, `AppConfigKeys`, `AppClaimTypes`)
+- **Project management as documentation** — work items in `proj-mgmt/epics/`, read before coding, update after
+- **Ask, don't guess** — when SDK internals are opaque, ask the developer directly
 
 ---
 
-## Project Context for Agents
-
-For agents starting a fresh session, the key context points are:
+## Project Context for Fresh Sessions
 
 - **Domain:** Law firm operations (cases, clients, billing, documents, calendar, research, intake)
-- **Auth model:** Entra ID OBO — Blazor Web App acquires token on behalf of logged-in user → passes to MCP Server → resolved to `IFirmIdentityContext` (role: `Partner`, `Associate`, `OfCounsel`, `Paralegal`, `LegalAssistant`, `Intern`)
-- **RBAC:** `ToolPermissionMatrix` enforces which tools each role can call via MCP request filter pipeline
+- **Auth model:** Entra ID OBO — Blazor Web App acquires token on behalf of user → passes to MCP Server → resolved to `IFirmIdentityContext`
+- **Roles:** `Partner`, `Associate`, `OfCounsel`, `Paralegal`, `LegalAssistant`, `Intern`
+- **RBAC:** `ToolPermissionMatrix` enforces per-role tool access via MCP request filter pipeline
 - **Transport:** HTTP (authenticated, production) or stdio (anonymous, MCP Inspector / Claude Desktop)
 - **SDK:** `ModelContextProtocol` 1.0.0-rc.1 (C# official SDK)
