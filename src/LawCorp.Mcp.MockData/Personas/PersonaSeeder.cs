@@ -1,16 +1,12 @@
+using LawCorp.Mcp.Core.Models;
 using LawCorp.Mcp.Data;
 
 namespace LawCorp.Mcp.MockData.Personas;
 
 /// <summary>
-/// Seeds the six canonical personas into the database.
-/// Tenant-specific Entra ID values come from <see cref="PersonaSeedConfig"/>
-/// (loaded from <c>persona-seed.json</c>). If no config is provided, personas
-/// are seeded with placeholder emails and no EntraObjectId.
-/// <para>
-/// Called by <see cref="MockDataSeeder"/> after practice groups are created but
-/// before random attorneys, so persona attorneys get deterministic low IDs.
-/// </para>
+/// Seeds the six canonical personas into the database as <see cref="User"/> records
+/// with their role-specific satellite data (<see cref="AttorneyDetails"/>,
+/// <see cref="InternDetails"/>).
 /// </summary>
 public class PersonaSeeder(LawCorpDbContext db, PersonaSeedConfig? config = null)
 {
@@ -18,24 +14,42 @@ public class PersonaSeeder(LawCorpDbContext db, PersonaSeedConfig? config = null
 
     public async Task<PersonaSeedResult> SeedAsync(CancellationToken ct = default)
     {
+        // Attorneys
         var harvey = PersonaDefinitions.HarveySpecter(_config.HarveySpecter);
         var kim = PersonaDefinitions.KimWexler(_config.KimWexler);
         var alan = PersonaDefinitions.AlanShore(_config.AlanShore);
 
-        await db.Attorneys.AddRangeAsync([harvey, kim, alan], ct);
+        await db.Users.AddRangeAsync([harvey, kim, alan], ct);
         await db.SaveChangesAsync(ct);
 
+        // Attorney details (need User IDs from above)
+        var harveyDetails = PersonaDefinitions.HarveySpecterDetails();
+        harveyDetails.UserId = harvey.Id;
+        var kimDetails = PersonaDefinitions.KimWexlerDetails();
+        kimDetails.UserId = kim.Id;
+        var alanDetails = PersonaDefinitions.AlanShoreDetails();
+        alanDetails.UserId = alan.Id;
+
+        await db.AttorneyDetails.AddRangeAsync([harveyDetails, kimDetails, alanDetails], ct);
+        await db.SaveChangesAsync(ct);
+
+        // Staff (with SupervisorId pointing to Harvey)
         var erin = PersonaDefinitions.ErinBrockovich(_config.ErinBrockovich);
-        await db.Paralegals.AddAsync(erin, ct);
+        await db.Users.AddAsync(erin, ct);
 
         var elle = PersonaDefinitions.ElleWoods(_config.ElleWoods);
-        elle.AssignedAttorneyId = harvey.Id;
-        await db.LegalAssistants.AddAsync(elle, ct);
+        elle.SupervisorId = harvey.Id;
+        await db.Users.AddAsync(elle, ct);
 
         var vinny = PersonaDefinitions.VinnyGambini(_config.VinnyGambini);
         vinny.SupervisorId = harvey.Id;
-        await db.Interns.AddAsync(vinny, ct);
+        await db.Users.AddAsync(vinny, ct);
+        await db.SaveChangesAsync(ct);
 
+        // Intern details
+        var vinnyDetails = PersonaDefinitions.VinnyGambiniDetails();
+        vinnyDetails.UserId = vinny.Id;
+        await db.InternDetails.AddAsync(vinnyDetails, ct);
         await db.SaveChangesAsync(ct);
 
         return new PersonaSeedResult(harvey, kim, alan, erin, elle, vinny);
@@ -43,9 +57,9 @@ public class PersonaSeeder(LawCorpDbContext db, PersonaSeedConfig? config = null
 }
 
 public record PersonaSeedResult(
-    Core.Models.Attorney Harvey,
-    Core.Models.Attorney Kim,
-    Core.Models.Attorney Alan,
-    Core.Models.Paralegal Erin,
-    Core.Models.LegalAssistant Elle,
-    Core.Models.Intern Vinny);
+    User Harvey,
+    User Kim,
+    User Alan,
+    User Erin,
+    User Elle,
+    User Vinny);

@@ -1,6 +1,6 @@
 # ADR-007: Normalize user identity into a shared User table (3NF compliance)
 
-**Status:** Proposed
+**Status:** Accepted / Implemented
 **Date:** 2026-02-24
 
 ## Context

@@ -6,9 +6,9 @@ namespace LawCorp.Mcp.Server.Tools;
 [McpServerToolType]
 public static class BillingTools
 {
-    [McpServerTool, Description("Log billable or non-billable time for an attorney on a case.")]
+    [McpServerTool, Description("Log billable or non-billable time for a user on a case.")]
     public static string TimeEntriesLog(
-        [Description("The attorney ID logging time")] int attorneyId,
+        [Description("The user ID logging time")] int userId,
         [Description("The case ID to log time against")] int caseId,
         [Description("Number of hours (e.g. 2.5)")] decimal hours,
         [Description("Description of work performed")] string description,
@@ -16,9 +16,9 @@ public static class BillingTools
         [Description("Whether this time is billable to the client")] bool billable = true)
         => throw new NotImplementedException("time_entries_log is not yet implemented.");
 
-    [McpServerTool, Description("Search time entries by attorney, case, date range, and billable status.")]
+    [McpServerTool, Description("Search time entries by user, case, date range, and billable status.")]
     public static string TimeEntriesSearch(
-        [Description("Filter by attorney ID")] int? attorneyId = null,
+        [Description("Filter by user ID")] int? userId = null,
         [Description("Filter by case ID")] int? caseId = null,
         [Description("Filter from date (ISO 8601 date string)")] string? dateFrom = null,
         [Description("Filter to date (ISO 8601 date string)")] string? dateTo = null,

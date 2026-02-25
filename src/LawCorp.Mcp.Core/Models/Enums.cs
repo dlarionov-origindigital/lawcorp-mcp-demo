@@ -1,5 +1,8 @@
 namespace LawCorp.Mcp.Core.Models;
 
+public enum FirmRole { Partner, Associate, OfCounsel, Paralegal, LegalAssistant, Intern }
+
+[Obsolete("Use FirmRole instead. Retained only for migration compatibility.")]
 public enum AttorneyRole { Partner, Associate, OfCounsel }
 public enum ClientType { Individual, Organization }
 public enum ContactType { Witness, Expert, Judge, OpposingCounsel, Prosecutor }

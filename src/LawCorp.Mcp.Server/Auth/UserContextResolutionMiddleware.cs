@@ -9,13 +9,9 @@ namespace LawCorp.Mcp.Server.Auth;
 
 /// <summary>
 /// ASP.NET Core middleware that resolves the authenticated user's identity from the
-/// validated JWT and the local database. Runs after the JWT Bearer middleware and
-/// before MCP tool handlers execute.
-/// <para>
-/// Stores the resolved <see cref="EntraIdUserContext"/> and
-/// <see cref="EntraFirmIdentityContext"/> in <c>HttpContext.Items</c> so the scoped
-/// DI factories can read them synchronously.
-/// </para>
+/// validated JWT and the local database. Queries the unified <c>Users</c> table by
+/// <c>EntraObjectId</c>, supporting all personnel types (attorneys, paralegals,
+/// legal assistants, interns).
 /// </summary>
 public sealed class UserContextResolutionMiddleware
 {
@@ -46,32 +42,32 @@ public sealed class UserContextResolutionMiddleware
 
         var db = context.RequestServices.GetRequiredService<LawCorpDbContext>();
 
-        var attorney = await db.Attorneys
+        var user = await db.Users
             .AsNoTracking()
-            .Include(a => a.CaseAssignments)
-            .FirstOrDefaultAsync(a => a.EntraObjectId == oid);
+            .Include(u => u.CaseAssignments)
+            .FirstOrDefaultAsync(u => u.EntraObjectId == oid);
 
-        if (attorney is null)
+        if (user is null)
             return;
 
-        var displayName = $"{attorney.FirstName} {attorney.LastName}";
+        var displayName = $"{user.FirstName} {user.LastName}";
 
         context.Items[UserContextKey] = new EntraIdUserContext
         {
-            UserId = attorney.Id,
+            UserId = user.Id,
             DisplayName = displayName,
-            Role = attorney.Role
+            Role = user.FirmRole
         };
 
         context.Items[FirmIdentityKey] = new EntraFirmIdentityContext
         {
             EntraObjectId = oid,
-            UserId = attorney.Id,
+            UserId = user.Id,
             DisplayName = displayName,
-            AttorneyRole = attorney.Role,
-            PracticeGroupId = attorney.PracticeGroupId,
-            AssignedCaseIds = attorney.CaseAssignments.Select(ca => ca.CaseId).ToList(),
-            AssignedAttorneyId = null
+            FirmRole = user.FirmRole,
+            PracticeGroupId = user.PracticeGroupId,
+            AssignedCaseIds = user.CaseAssignments.Select(ca => ca.CaseId).ToList(),
+            SupervisorId = user.SupervisorId
         };
     }
 }

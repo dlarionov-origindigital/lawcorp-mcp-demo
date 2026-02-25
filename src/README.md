@@ -62,7 +62,7 @@ dotnet test LawCorp.Mcp.sln
 
 **Seed mock data**
 
-Mock data seeding is built into `LawCorp.Mcp.MockData`. Call `MockDataSeeder.SeedAsync(db)` with an EF Core `DbContext` instance. Seeding is idempotent (checks `db.Attorneys.AnyAsync()` before inserting). The seed is deterministic (`Random(42)`).
+Mock data seeding is built into `LawCorp.Mcp.MockData`. Call `MockDataSeeder.SeedAsync(db)` with an EF Core `DbContext` instance. Seeding is idempotent (checks `db.Users.AnyAsync()` before inserting). The seed is deterministic (`Random(42)`).
 
 ## Configuration
 

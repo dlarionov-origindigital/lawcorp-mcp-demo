@@ -12,5 +12,5 @@ public class ResearchMemo
     public string Tags { get; set; } = string.Empty;
 
     public Case Case { get; set; } = null!;
-    public Attorney Author { get; set; } = null!;
+    public User Author { get; set; } = null!;
 }

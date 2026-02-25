@@ -23,8 +23,8 @@ public class MockDataSeeder(
 
     public async Task SeedAsync(CancellationToken ct = default)
     {
-        if (await db.Attorneys.AnyAsync(ct))
-            return; // Already seeded — idempotent
+        if (await db.Users.AnyAsync(ct))
+            return;
 
         // 1. Practice groups (static reference data)
         var practiceGroups = SeedPracticeGroups();
@@ -42,12 +42,24 @@ public class MockDataSeeder(
 
         // 4. Random attorneys (fill out the rest of the firm)
         var attorneyGen = new AttorneyGenerator(_rng);
-        var randomAttorneys = attorneyGen.GenerateMany(_profile.AttorneyCount, practiceGroups).ToList();
-        await db.Attorneys.AddRangeAsync(randomAttorneys, ct);
+        var generated = attorneyGen.GenerateMany(_profile.AttorneyCount, practiceGroups).ToList();
+
+        var randomUsers = generated.Select(g => g.User).ToList();
+        await db.Users.AddRangeAsync(randomUsers, ct);
         await db.SaveChangesAsync(ct);
 
-        var attorneys = new List<Attorney> { personas.Harvey, personas.Kim, personas.Alan };
-        attorneys.AddRange(randomAttorneys);
+        // Link attorney details now that user IDs are assigned
+        var detailsList = generated.Select(g =>
+        {
+            g.Details.UserId = g.User.Id;
+            return g.Details;
+        }).ToList();
+        await db.AttorneyDetails.AddRangeAsync(detailsList, ct);
+        await db.SaveChangesAsync(ct);
+
+        // Collect all attorneys (personas + random) for case generation
+        var attorneys = new List<User> { personas.Harvey, personas.Kim, personas.Alan };
+        attorneys.AddRange(randomUsers);
 
         // 5. Clients
         var clientGen = new ClientGenerator(_rng);
@@ -74,7 +86,7 @@ public class MockDataSeeder(
             var lead = caseAttorneys[_rng.Next(caseAttorneys.Count)];
             await db.CaseAssignments.AddAsync(new CaseAssignment
             {
-                CaseId = @case.Id, AttorneyId = lead.Id, Role = AssignmentRole.Lead,
+                CaseId = @case.Id, UserId = lead.Id, Role = AssignmentRole.Lead,
                 AssignedDate = @case.OpenDate
             }, ct);
 
