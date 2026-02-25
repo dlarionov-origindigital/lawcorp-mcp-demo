@@ -159,6 +159,7 @@ public static class ServerBootstrap
 
     private static void RegisterToolTypes(IServiceCollection services)
     {
+        services.AddSingleton<IToolPermissionPolicy, ToolPermissionMatrix>();
         services.AddScoped<CaseManagementTools>();
     }
 
