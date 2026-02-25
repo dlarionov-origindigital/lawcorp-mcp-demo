@@ -57,7 +57,7 @@ public static class ServerBootstrap
         builder.Services.AddLawCorpDatabase(connectionString);
 
         ConfigureAuth(builder.Services, builder.Configuration);
-        RegisterToolTypes(builder.Services);
+        RegisterSharedServices(builder.Services, builder.Configuration);
 
         builder.Services
             .AddMcpServer()
@@ -105,7 +105,7 @@ public static class ServerBootstrap
         }
 
         builder.Services.AddSingleton<IUserContext, AnonymousUserContext>();
-        RegisterToolTypes(builder.Services);
+        RegisterSharedServices(builder.Services, builder.Configuration);
 
         builder.Services
             .AddMcpServer()
@@ -157,10 +157,27 @@ public static class ServerBootstrap
             services.AddSingleton<IUserContext, AnonymousUserContext>();
     }
 
-    private static void RegisterToolTypes(IServiceCollection services)
+    private static void RegisterSharedServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<IToolPermissionPolicy, ToolPermissionMatrix>();
         services.AddScoped<CaseManagementTools>();
+        services.AddScoped<DocumentTools>();
+
+        services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssemblyContaining<Handlers.Cases.SearchCasesHandler>();
+        });
+
+        var externalApiBaseUrl = configuration["DownstreamApis:ExternalApi:BaseUrl"] ?? "http://localhost:5002";
+        services.AddHttpClient("ExternalApi", client =>
+        {
+            client.BaseAddress = new Uri(externalApiBaseUrl);
+        });
+
+        if (!configuration.GetValue<bool>("UseAuth"))
+        {
+            services.AddSingleton<IDownstreamTokenProvider, NoOpTokenProvider>();
+        }
     }
 
     private static async Task SeedIfConfiguredAsync(IServiceProvider services, IConfiguration configuration)

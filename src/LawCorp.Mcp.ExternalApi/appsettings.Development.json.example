@@ -1,0 +1,25 @@
+{
+  "SeedDmsData": true,
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug",
+      "Microsoft": "Information"
+    }
+  },
+  "Kestrel": {
+    "Endpoints": {
+      "Http": {
+        "Url": "http://localhost:5002"
+      }
+    }
+  },
+  "ConnectionStrings": {
+    "DmsDb": "Server=.\\SQLEXPRESS;Database=LawCorpDms;Trusted_Connection=True;TrustServerCertificate=True;"
+  },
+  "AzureAd": {
+    "Instance": "https://login.microsoftonline.com/",
+    "TenantId": "YOUR_TENANT_ID",
+    "ClientId": "YOUR_EXTERNAL_API_CLIENT_ID (from 'LawCorp External API' registration)",
+    "Audience": "api://YOUR_EXTERNAL_API_CLIENT_ID"
+  }
+}

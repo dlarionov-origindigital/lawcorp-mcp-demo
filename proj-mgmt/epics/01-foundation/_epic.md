@@ -10,8 +10,8 @@
 | [1.1](./1.1-solution-structure/1.1-solution-structure.md) | Solution & Project Structure | DONE |
 | [1.2](./1.2-authn/1.2-authentication.md) | Authentication — Microsoft Entra ID | IN PROGRESS |
 | [1.3](./1.3-authz/1.3-authorization.md) | Custom Authorization Layer | BACKLOG |
-| [1.4](./1.4-external-api/1.4-external-api.md) | External Downstream API Service | BACKLOG |
-| [1.5](./1.5-cqrs-dispatch/1.5-cqrs-dispatch.md) | CQRS Dispatch Pattern for MCP Tools | BACKLOG |
+| [1.4](./1.4-external-api/1.4-external-api.md) | External Downstream API Service | IN PROGRESS |
+| [1.5](./1.5-cqrs-dispatch/1.5-cqrs-dispatch.md) | CQRS Dispatch Pattern for MCP Tools | IN PROGRESS |
 
 ## Key Architecture Decisions
 

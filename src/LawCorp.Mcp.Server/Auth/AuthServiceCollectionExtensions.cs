@@ -37,7 +37,7 @@ public static class AuthServiceCollectionExtensions
                 ?? throw new UnauthorizedAccessException(
                     "Authenticated user context was not resolved. " +
                     "Ensure the request includes a valid Entra ID Bearer token and the " +
-                    "user's EntraObjectId is registered in the Attorney table. " +
+                    "user's EntraObjectId is registered. " +
                     "See docs/auth-config.md for setup instructions.");
         });
 
