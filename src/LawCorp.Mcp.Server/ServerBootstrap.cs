@@ -62,7 +62,12 @@ public static class ServerBootstrap
         builder.Services
             .AddMcpServer()
             .WithHttpTransport()
-            .WithToolsFromAssembly();
+            .WithToolsFromAssembly()
+            .WithRequestFilters(f =>
+            {
+                f.AddListToolsFilter(ToolPermissionFilters.ListTools);
+                f.AddCallToolFilter(ToolPermissionFilters.CallTool);
+            });
 
         var app = builder.Build();
 
@@ -105,7 +110,12 @@ public static class ServerBootstrap
         builder.Services
             .AddMcpServer()
             .WithStdioServerTransport()
-            .WithToolsFromAssembly();
+            .WithToolsFromAssembly()
+            .WithRequestFilters(f =>
+            {
+                f.AddListToolsFilter(ToolPermissionFilters.ListTools);
+                f.AddCallToolFilter(ToolPermissionFilters.CallTool);
+            });
 
         var app = builder.Build();
 
