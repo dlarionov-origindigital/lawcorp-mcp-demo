@@ -28,16 +28,20 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="MediatR" Version="14.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.*" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
     <PackageReference Include="Microsoft.Identity.Web" Version="4.3.0" />
     <PackageReference Include="ModelContextProtocol" Version="1.0.0-rc.1" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="1.0.0-rc.1" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.12.47" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\LawCorp.Mcp.Core\LawCorp.Mcp.Core.csproj" />
     <ProjectReference Include="..\LawCorp.Mcp.Data\LawCorp.Mcp.Data.csproj" />
     <ProjectReference Include="..\LawCorp.Mcp.MockData\LawCorp.Mcp.MockData.csproj" />
+    <ProjectReference Include="..\LawCorp.Mcp.Server.Handlers\LawCorp.Mcp.Server.Handlers.csproj" />
   </ItemGroup>
 
 </Project>

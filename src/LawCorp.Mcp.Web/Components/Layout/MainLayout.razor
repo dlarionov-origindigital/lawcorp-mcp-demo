@@ -4,7 +4,7 @@
     <FluentHeader>
         <div class="lc-header">
             <span class="lc-header__title">
-                @(Configuration["Branding:AppName"] ?? "Law-Corp")
+                @(Configuration[AppConfigKeys.Branding.AppName] ?? AppConfigKeys.Branding.DefaultAppName)
             </span>
             <FluentSpacer />
             <LoginDisplay />
@@ -23,7 +23,7 @@
 
     <FluentFooter>
         <div class="lc-footer">
-            @(Configuration["Branding:FooterText"] ?? "Law-Corp LLP — MCP Reference Architecture")
+            @(Configuration[AppConfigKeys.Branding.FooterText] ?? AppConfigKeys.Branding.DefaultFooterText)
         </div>
     </FluentFooter>
 </FluentLayout>

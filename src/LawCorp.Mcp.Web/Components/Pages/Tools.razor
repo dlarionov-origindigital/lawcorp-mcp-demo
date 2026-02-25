@@ -1,15 +1,460 @@
 @page "/tools"
+@rendermode InteractiveServer
 
-<PageTitle>Tools</PageTitle>
+@inject IMcpClientService McpClient
+@inject ILogger<Tools> Logger
+@inject NavigationManager Navigation
+@inject IConfiguration Configuration
+
+@using Microsoft.Identity.Web
+@using ModelContextProtocol.Client
+@using ModelContextProtocol.Protocol
+@using System.Text.Json
+
+<PageTitle>Tools — Law-Corp</PageTitle>
 
 <h1 class="lc-page-title">MCP Tools</h1>
 <p class="lc-page-subtitle">Discover and invoke tools from the connected MCP server.</p>
 
-<div class="lc-placeholder">
-    <span class="lc-placeholder__title">Coming soon</span>
-    <span class="lc-placeholder__desc">
-        Tool discovery and invocation will be available once the MCP client
-        integration (Feature 8.2) is implemented. This page will dynamically list
-        all tools and provide a form for invoking each one.
-    </span>
-</div>
+@if (_loadError is not null)
+{
+    <div class="lc-info-banner lc-info-banner--danger">
+        Could not load tools: @_loadError
+    </div>
+}
+else if (_loading)
+{
+    <div style="display:flex; align-items:center; gap: var(--lc-space-md); color: var(--lc-color-text-secondary);">
+        <FluentProgressRing Style="width:24px; height:24px;" />
+        <span>Connecting to MCP server…</span>
+    </div>
+}
+else
+{
+    <div class="lc-tools-layout">
+
+        <!-- ── Left: Tool List ─────────────────────────────────────────── -->
+        <div class="lc-tools-sidebar">
+            <div class="lc-tool-search">
+                <FluentSearch @bind-Value="_search"
+                              Placeholder="Search tools…"
+                              Style="width:100%;"
+                              @oninput="OnSearchInput" />
+                <span class="lc-tool-count">@FilteredTools.Count tools</span>
+            </div>
+
+            <div class="lc-tools-list">
+                @foreach (var tool in FilteredTools)
+                {
+                    var isSelected = _selected?.Name == tool.Name;
+                    <div class="lc-tool-card @(isSelected ? "lc-tool-card--active" : "")"
+                         @onclick="() => SelectTool(tool)">
+                        <span class="lc-tool-card__name">@tool.Name</span>
+                        @if (!string.IsNullOrEmpty(tool.Description))
+                        {
+                            <span class="lc-tool-card__desc">@tool.Description</span>
+                        }
+                    </div>
+                }
+
+                @if (FilteredTools.Count == 0)
+                {
+                    <span class="lc-tool-empty">No tools match "@_search"</span>
+                }
+            </div>
+        </div>
+
+        <!-- ── Right: Detail + Form ────────────────────────────────────── -->
+        <div class="lc-tool-detail">
+            @if (_selected is null)
+            {
+                <div class="lc-placeholder" style="height: 300px;">
+                    <span class="lc-placeholder__title">Select a tool</span>
+                    <span class="lc-placeholder__desc">Choose a tool from the list to view its parameters and invoke it.</span>
+                </div>
+            }
+            else
+            {
+                <!-- Header -->
+                <div class="lc-tool-detail__header">
+                    <code class="lc-tool-detail__name">@_selected.Name</code>
+                    @if (!string.IsNullOrEmpty(_selected.Description))
+                    {
+                        <p class="lc-tool-detail__desc">@_selected.Description</p>
+                    }
+                </div>
+
+                <FluentDivider />
+
+                <!-- Parameter Form -->
+                @if (_params.Count > 0)
+                {
+                    <p class="lc-section-title">Parameters</p>
+
+                    @foreach (var p in _params)
+                    {
+                        <div class="lc-param-field">
+                            <label class="lc-param-label">
+                                @p.Name
+                                @if (p.Required)
+                                {
+                                    <span class="lc-param-required" title="Required">*</span>
+                                }
+                                @if (!string.IsNullOrEmpty(p.Description))
+                                {
+                                    <span class="lc-param-hint">— @p.Description</span>
+                                }
+                            </label>
+
+                            @if (p.Type == "boolean")
+                            {
+                                <FluentCheckbox @bind-Value="_boolValues[p.Name]" />
+                            }
+                            else if (p.EnumValues is { Length: > 0 })
+                            {
+                                <FluentSelect TOption="string" @bind-Value="_formValues[p.Name]" Style="width: 100%;">
+                                    @if (!p.Required)
+                                    {
+                                        <FluentOption TOption="string" Value="">— any —</FluentOption>
+                                    }
+                                    @foreach (var ev in p.EnumValues)
+                                    {
+                                        <FluentOption TOption="string" Value="@ev">@ev</FluentOption>
+                                    }
+                                </FluentSelect>
+                            }
+                            else
+                            {
+                                <FluentTextField @bind-Value="_formValues[p.Name]"
+                                                 Placeholder="@(p.Type is "integer" or "number" ? "0" : "")"
+                                                 Style="width: 100%;" />
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="lc-param-hint" style="margin-bottom: var(--lc-space-md);">
+                        This tool requires no parameters.
+                    </p>
+                }
+
+                <!-- Validation error -->
+                @if (_validationError is not null)
+                {
+                    <div class="lc-info-banner lc-info-banner--danger" style="margin-bottom: var(--lc-space-md);">
+                        @_validationError
+                    </div>
+                }
+
+                <!-- Invoke -->
+                <div>
+                    <FluentButton Appearance="Appearance.Accent"
+                                  OnClick="InvokeToolAsync"
+                                  Loading="_invoking"
+                                  Disabled="_invoking">
+                        Invoke
+                    </FluentButton>
+                </div>
+
+                <!-- Result -->
+                @if (_invoking)
+                {
+                    <div style="display:flex; align-items:center; gap: var(--lc-space-sm); color: var(--lc-color-text-secondary);">
+                        <FluentProgressRing Style="width:20px; height:20px;" />
+                        <span>Calling @_selected.Name…</span>
+                    </div>
+                }
+                else if (_invokeError is not null)
+                {
+                    <div class="lc-result-panel lc-result-panel--error">
+                        <div class="lc-result-panel__header">Error</div>
+                        <pre class="lc-result-panel__content">@_invokeError</pre>
+                    </div>
+                }
+                else if (_result is not null)
+                {
+                    <div class="lc-result-panel @(_resultIsError ? "lc-result-panel--error" : "")">
+                        <div class="lc-result-panel__header">
+                            @(_resultIsError ? "Tool returned an error" : "Result")
+                        </div>
+                        <pre class="lc-result-panel__content">@_resultText</pre>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- ── History ─────────────────────────────────────────────────────── -->
+    @if (_history.Count > 0)
+    {
+        <div class="lc-history-panel">
+            <p class="lc-section-title">Invocation History</p>
+            <div class="lc-history-list">
+                @foreach (var entry in _history)
+                {
+                    <div class="lc-history-item">
+                        <span class="lc-history-item__tool">@entry.ToolName</span>
+                        <span class="lc-history-item__time">@entry.At.ToString("HH:mm:ss")</span>
+                        <span class="lc-history-item__status @(entry.Success ? "lc-history-item__status--ok" : "lc-history-item__status--err")">
+                            @(entry.Success ? "✓ OK" : "✗ Error")
+                        </span>
+                        <span class="lc-history-item__summary">@entry.Summary</span>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+
+@code {
+    // ── State ─────────────────────────────────────────────────────────────────
+
+    private bool _loading = true;
+    private string? _loadError;
+
+    private IList<McpClientTool> _tools = [];
+    private string _search = "";
+
+    private McpClientTool? _selected;
+    private List<ToolParam> _params = [];
+    private Dictionary<string, string> _formValues = [];
+    private Dictionary<string, bool> _boolValues = [];
+
+    private bool _invoking;
+    private string? _validationError;
+    private string? _invokeError;
+    private CallToolResult? _result;
+    private string? _resultText;
+    private bool _resultIsError;
+
+    private List<InvocationRecord> _history = [];
+
+    // ── Models ────────────────────────────────────────────────────────────────
+
+    private record ToolParam(
+        string Name,
+        string Type,
+        string? Description,
+        bool Required,
+        string[]? EnumValues);
+
+    private record InvocationRecord(
+        string ToolName,
+        DateTime At,
+        bool Success,
+        string Summary);
+
+    // ── Computed ──────────────────────────────────────────────────────────────
+
+    private List<McpClientTool> FilteredTools =>
+        string.IsNullOrWhiteSpace(_search)
+            ? [.. _tools]
+            : [.. _tools.Where(t =>
+                t.Name.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+                (t.Description?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false))];
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _tools = await McpClient.ListToolsAsync();
+        }
+        catch (Exception ex) when (IsAuthChallenge(ex))
+        {
+            Logger.LogWarning("Token cache empty or consent required — redirecting to sign-in");
+            Navigation.NavigateTo(WebRoutes.Auth.SignIn, forceLoad: true);
+            return;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to list MCP tools");
+            _loadError = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    // ── Interaction ───────────────────────────────────────────────────────────
+
+    private void OnSearchInput(ChangeEventArgs e) =>
+        _search = e.Value?.ToString() ?? "";
+
+    private void SelectTool(McpClientTool tool)
+    {
+        _selected = tool;
+        _params = ParseParams(tool);
+        _formValues = _params
+            .Where(p => p.Type != "boolean")
+            .ToDictionary(p => p.Name, _ => "");
+        _boolValues = _params
+            .Where(p => p.Type == "boolean")
+            .ToDictionary(p => p.Name, _ => false);
+        _validationError = null;
+        _invokeError = null;
+        _result = null;
+        _resultText = null;
+        _resultIsError = false;
+    }
+
+    private async Task InvokeToolAsync()
+    {
+        if (_selected is null) return;
+
+        _validationError = Validate();
+        if (_validationError is not null) return;
+
+        _invoking = true;
+        _invokeError = null;
+        _result = null;
+        _resultText = null;
+
+        try
+        {
+            var args = BuildArguments();
+            var response = await McpClient.CallToolAsync(_selected.Name, args);
+
+            _result = response;
+            _resultIsError = response.IsError ?? false;
+            _resultText = FormatResult(response);
+
+            _history.Insert(0, new InvocationRecord(
+                _selected.Name, DateTime.Now, !_resultIsError,
+                _resultIsError ? "Tool error" : TruncateSummary(_resultText)));
+
+            if (_history.Count > 10) _history.RemoveAt(10);
+        }
+        catch (Exception ex) when (IsAuthChallenge(ex))
+        {
+            Logger.LogWarning("Token expired during tool invocation — redirecting to sign-in");
+            Navigation.NavigateTo(WebRoutes.Auth.SignIn, forceLoad: true);
+            return;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Tool invocation failed for {Tool}", _selected.Name);
+            _invokeError = ex.Message;
+
+            _history.Insert(0, new InvocationRecord(_selected.Name, DateTime.Now, false, ex.Message));
+            if (_history.Count > 10) _history.RemoveAt(10);
+        }
+        finally
+        {
+            _invoking = false;
+        }
+    }
+
+    // ── Schema Parsing ────────────────────────────────────────────────────────
+
+    private static List<ToolParam> ParseParams(McpClientTool tool)
+    {
+        var result = new List<ToolParam>();
+        try
+        {
+            var schema = tool.JsonSchema;
+            if (!schema.TryGetProperty("properties", out var props))
+                return result;
+
+            var required = schema.TryGetProperty("required", out var req)
+                ? req.EnumerateArray().Select(r => r.GetString()!).ToHashSet()
+                : new HashSet<string>();
+
+            foreach (var prop in props.EnumerateObject())
+            {
+                var type = prop.Value.TryGetProperty("type", out var t)
+                    ? t.GetString() ?? "string"
+                    : "string";
+                var desc = prop.Value.TryGetProperty("description", out var d)
+                    ? d.GetString()
+                    : null;
+                string[]? enumVals = prop.Value.TryGetProperty("enum", out var e)
+                    ? [.. e.EnumerateArray().Select(v => v.GetString()!)]
+                    : null;
+
+                result.Add(new ToolParam(prop.Name, type, desc, required.Contains(prop.Name), enumVals));
+            }
+        }
+        catch
+        {
+            // Malformed schema — return whatever we parsed so far
+        }
+        return result;
+    }
+
+    // ── Form Helpers ──────────────────────────────────────────────────────────
+
+    private string? Validate()
+    {
+        foreach (var p in _params.Where(p => p.Required))
+        {
+            if (p.Type == "boolean") continue;
+            if (string.IsNullOrWhiteSpace(_formValues.GetValueOrDefault(p.Name, "")))
+                return $"'{p.Name}' is required.";
+        }
+        return null;
+    }
+
+    private Dictionary<string, object?> BuildArguments()
+    {
+        var args = new Dictionary<string, object?>();
+        foreach (var p in _params)
+        {
+            if (p.Type == "boolean")
+            {
+                args[p.Name] = _boolValues.GetValueOrDefault(p.Name);
+                continue;
+            }
+
+            var raw = _formValues.GetValueOrDefault(p.Name, "");
+            if (string.IsNullOrEmpty(raw)) continue;
+
+            args[p.Name] = p.Type switch
+            {
+                "integer" => int.TryParse(raw, out var i) ? (object?)i : raw,
+                "number"  => double.TryParse(raw, out var d) ? (object?)d : raw,
+                _         => raw
+            };
+        }
+        return args;
+    }
+
+    // ── Result Helpers ────────────────────────────────────────────────────────
+
+    private static string FormatResult(CallToolResult result)
+    {
+        var text = string.Join("\n\n", result.Content
+            .OfType<TextContentBlock>()
+            .Select(c => c.Text));
+
+        // Pretty-print if the result is JSON
+        try
+        {
+            using var doc = JsonDocument.Parse(text);
+            return JsonSerializer.Serialize(doc, new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch
+        {
+            return text;
+        }
+    }
+
+    private static string TruncateSummary(string? text, int max = 80)
+    {
+        if (string.IsNullOrEmpty(text)) return "";
+        var single = text.ReplaceLineEndings(" ").Trim();
+        return single.Length <= max ? single : single[..max] + "…";
+    }
+
+    // ── Auth helpers ──────────────────────────────────────────────────────────
+
+    private bool IsAuthChallenge(Exception ex) =>
+        Configuration.GetValue<bool>(AppConfigKeys.UseAuth) && ContainsAuthChallenge(ex);
+
+    private static bool ContainsAuthChallenge(Exception? ex) =>
+        ex is MicrosoftIdentityWebChallengeUserException
+        || (ex?.InnerException is not null && ContainsAuthChallenge(ex.InnerException));
+}

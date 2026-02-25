@@ -12,23 +12,123 @@ This guide covers how to run, test, and debug the Law-Corp MCP server on your lo
 | SQL Server Express | Local instance at `.\SQLEXPRESS` | Or update the connection string |
 | [Node.js / npm](https://nodejs.org/) | 18+ | Required for MCP Inspector (`npx`) |
 
+## Port Allocation
+
+All services use distinct ports to avoid `Failed to bind to address: address already in use` errors.
+
+| Service | HTTP Port | HTTPS Port | Project |
+|---|---|---|---|
+| MCP Server | 5000 | — | `LawCorp.Mcp.Server` |
+| Web App | 5003 | 5001 | `LawCorp.Mcp.Web` |
+| External API (DMS) | 5002 | 7002 | `LawCorp.Mcp.ExternalApi` |
+
+Ports are configured via `Properties/launchSettings.json` in each project and Kestrel endpoint settings in `appsettings.Development.json`. If a port is in use, kill the process or change the port in both `launchSettings.json` and `appsettings.Development.json`.
+
+**Troubleshooting port conflicts on Windows:**
+
+```bash
+# Find what's holding a port
+netstat -ano | findstr ":5002"
+
+# Kill it by PID
+taskkill /PID <pid> /F
+```
+
+---
+
 ## Initial Setup
 
 ```bash
 # 1. Build the solution
 dotnet build src/LawCorp.Mcp.sln
 
-# 2. Copy the example config and fill in your connection string
+# 2. Copy example configs for each service
 cp src/LawCorp.Mcp.Server/appsettings.Development.json.example \
    src/LawCorp.Mcp.Server/appsettings.Development.json
 
-# 3. Run the server (stdio transport)
+cp src/LawCorp.Mcp.ExternalApi/appsettings.Development.json.example \
+   src/LawCorp.Mcp.ExternalApi/appsettings.Development.json
+
+# 3. Run the MCP server (stdio transport, default)
 dotnet run --no-launch-profile --project src/LawCorp.Mcp.Server
 ```
 
 The server will start in stdio mode, waiting for JSON-RPC messages on stdin. If `SeedMockData` is `true` in your `appsettings.Development.json`, the database is recreated and seeded on every startup.
 
 > **Important:** Always use `--no-launch-profile` when running via stdio. Without it, `dotnet run` prints `"Using launch settings from..."` to stdout, which corrupts the JSON-RPC stream and causes MCP clients and the Inspector to fail with `SyntaxError: Unexpected token`. Visual Studio is unaffected because it launches the exe directly, bypassing `dotnet run`.
+
+---
+
+## Running All Services (Full Stack)
+
+For document tools to work, both the MCP Server and the External API (DMS) must be running. Open separate terminals:
+
+**Terminal 1 — External API (DMS):**
+
+```bash
+dotnet run --project src/LawCorp.Mcp.ExternalApi --launch-profile http
+```
+
+Starts at `http://localhost:5002`. Verify with `curl http://localhost:5002/health`.
+
+**Terminal 2 — MCP Server (HTTP transport):**
+
+```bash
+dotnet run --project src/LawCorp.Mcp.Server --launch-profile http
+```
+
+Starts at `http://localhost:5000`. MCP endpoint at `http://localhost:5000/mcp`.
+
+**Terminal 3 — Web App (optional):**
+
+```bash
+dotnet run --project src/LawCorp.Mcp.Web --launch-profile https
+```
+
+Starts at `https://localhost:5001`.
+
+### Databases
+
+The solution uses two separate SQL Server databases:
+
+| Database | Service | Seed Setting | Content |
+|---|---|---|---|
+| `LawCorpLocal` | MCP Server | `"SeedMockData": true` | Cases, clients, users, billing, etc. |
+| `LawCorpDms` | External API | `"SeedDmsData": true` | DMS workspaces, documents, access rules |
+
+Both databases are created automatically via `EnsureCreatedAsync()` when seeding is enabled. No manual SQL setup is required.
+
+### How tools route to data sources
+
+Case tools (e.g., `cases_search`, `cases_get`) dispatch through MediatR to handlers that query the local `LawCorpLocal` database directly (in-process).
+
+Document tools (e.g., `documents_search`, `documents_get`) dispatch through MediatR to handlers that make HTTP calls to the External API at `http://localhost:5002`, which queries the `LawCorpDms` database. When auth is enabled, these calls use OBO token exchange.
+
+```
+MCP Client (Claude Desktop / Inspector / Web App)
+    │
+    ▼
+MCP Server (:5000)
+    │
+    ├─ cases_search   → MediatR → SearchCasesHandler   → LawCorpLocal DB (in-process)
+    ├─ cases_get      → MediatR → GetCaseByIdHandler    → LawCorpLocal DB (in-process)
+    │
+    ├─ documents_search → MediatR → SearchDocumentsHandler → HTTP → External API (:5002) → LawCorpDms DB
+    └─ documents_get    → MediatR → GetDocumentByIdHandler → HTTP → External API (:5002) → LawCorpDms DB
+```
+
+### OpenAPI & Swagger UI
+
+Both HTTP services expose OpenAPI specs and an interactive Swagger UI (Scalar) in non-Production environments ([ADR-009](../proj-mgmt/decisions/009-swagger-ui-local-dev.md)):
+
+| Service | Swagger UI (Scalar) | OpenAPI Spec |
+|---|---|---|
+| MCP Server | `http://localhost:5000/scalar/v1` | `http://localhost:5000/openapi/v1.json` |
+| External API | `http://localhost:5002/scalar/v1` | `http://localhost:5002/openapi/v1.json` |
+
+When launching with the `http` launch profile, the browser auto-opens to the Scalar UI. You can explore endpoints, view schemas, and send test requests directly from the browser.
+
+> OpenAPI and Scalar UI are available in Development, QA, and UAT environments. They are **not** served in Production. Environment is controlled by `ASPNETCORE_ENVIRONMENT` / `DOTNET_ENVIRONMENT`.
 
 ---
 

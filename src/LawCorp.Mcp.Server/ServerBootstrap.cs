@@ -7,11 +7,15 @@ using LawCorp.Mcp.Server.Auth;
 using LawCorp.Mcp.Server.Tools;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using ModelContextProtocol.Server;
+using Scalar.AspNetCore;
 
 namespace LawCorp.Mcp.Server;
 
@@ -57,12 +61,22 @@ public static class ServerBootstrap
         builder.Services.AddLawCorpDatabase(connectionString);
 
         ConfigureAuth(builder.Services, builder.Configuration);
-        RegisterToolTypes(builder.Services);
+        RegisterSharedServices(builder.Services, builder.Configuration);
+
+        builder.Services.AddHealthChecks();
+
+        if (!builder.Environment.IsProduction())
+            builder.Services.AddOpenApi();
 
         builder.Services
             .AddMcpServer()
             .WithHttpTransport()
-            .WithToolsFromAssembly();
+            .WithToolsFromAssembly()
+            .WithRequestFilters(f =>
+            {
+                f.AddListToolsFilter(ToolPermissionFilters.ListTools);
+                f.AddCallToolFilter(ToolPermissionFilters.CallTool);
+            });
 
         var app = builder.Build();
 
@@ -73,7 +87,18 @@ public static class ServerBootstrap
             app.UseMiddleware<UserContextResolutionMiddleware>();
         }
 
-        app.MapMcp();
+        app.MapHealthChecks("/api/health", new HealthCheckOptions
+        {
+            ResponseWriter = WriteHealthResponse
+        }).AllowAnonymous();
+
+        if (!app.Environment.IsProduction())
+        {
+            app.MapOpenApi();
+            app.MapScalarApiReference();
+        }
+
+        app.MapMcp("/mcp");
 
         await SeedIfConfiguredAsync(app.Services, builder.Configuration);
         await app.RunAsync();
@@ -100,12 +125,17 @@ public static class ServerBootstrap
         }
 
         builder.Services.AddSingleton<IUserContext, AnonymousUserContext>();
-        RegisterToolTypes(builder.Services);
+        RegisterSharedServices(builder.Services, builder.Configuration);
 
         builder.Services
             .AddMcpServer()
             .WithStdioServerTransport()
-            .WithToolsFromAssembly();
+            .WithToolsFromAssembly()
+            .WithRequestFilters(f =>
+            {
+                f.AddListToolsFilter(ToolPermissionFilters.ListTools);
+                f.AddCallToolFilter(ToolPermissionFilters.CallTool);
+            });
 
         var app = builder.Build();
 
@@ -147,9 +177,45 @@ public static class ServerBootstrap
             services.AddSingleton<IUserContext, AnonymousUserContext>();
     }
 
-    private static void RegisterToolTypes(IServiceCollection services)
+    private static void RegisterSharedServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddSingleton<IToolPermissionPolicy, ToolPermissionMatrix>();
         services.AddScoped<CaseManagementTools>();
+        services.AddScoped<DocumentTools>();
+
+        services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssemblyContaining<Handlers.Cases.SearchCasesHandler>();
+        });
+
+        var externalApiBaseUrl = configuration["DownstreamApis:ExternalApi:BaseUrl"] ?? "http://localhost:5002";
+        services.AddHttpClient("ExternalApi", client =>
+        {
+            client.BaseAddress = new Uri(externalApiBaseUrl);
+        });
+
+        if (!configuration.GetValue<bool>("UseAuth"))
+        {
+            services.AddSingleton<IDownstreamTokenProvider, NoOpTokenProvider>();
+        }
+    }
+
+    private static async Task WriteHealthResponse(HttpContext context, HealthReport report)
+    {
+        context.Response.ContentType = "application/json";
+        var response = new
+        {
+            status = report.Status.ToString(),
+            service = "LawCorp MCP Server",
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description,
+                duration = e.Value.Duration.TotalMilliseconds
+            })
+        };
+        await context.Response.WriteAsJsonAsync(response);
     }
 
     private static async Task SeedIfConfiguredAsync(IServiceProvider services, IConfiguration configuration)

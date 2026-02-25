@@ -11,6 +11,7 @@
 | [6.2](./6.2-protocol-features.md) | Cross-Cutting Protocol Features | Feature | BACKLOG |
 | [6.3](./6.3-testing.md) | Testing | Feature | BACKLOG |
 | [6.4](./6.4-deployment.md) | Deployment to Azure Foundry | Feature | BACKLOG |
+| [6.5](./6.5-health-observability/6.5-health-observability.md) | Health Checks & Observability | Feature | BACKLOG |
 
 ## Dependencies
 
@@ -25,3 +26,5 @@
 - [ ] All tool, resource, and prompt handlers have integration tests
 - [ ] Solution deployed and running in Azure Foundry
 - [ ] CI/CD pipeline operational with automated testing gate
+- [ ] Health check endpoints operational on all deployed services
+- [ ] Azure App Service monitors instance health via `/health` probes

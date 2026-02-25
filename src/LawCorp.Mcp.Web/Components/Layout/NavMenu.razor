@@ -1,13 +1,13 @@
 @* 250px side nav — uses Fluent UI nav components, no icons (v4 stable) *@
 <FluentNavMenu Width="250" Style="height: 100%; border-right: 1px solid var(--lc-color-border);">
-    <FluentNavLink Href="/" Match="NavLinkMatch.All">Home</FluentNavLink>
-    <FluentNavLink Href="/tools">Tools</FluentNavLink>
-    <FluentNavLink Href="/resources">Resources</FluentNavLink>
-    <FluentNavLink Href="/prompts">Prompts</FluentNavLink>
+    <FluentNavLink Href="@WebRoutes.Home" Match="NavLinkMatch.All">Home</FluentNavLink>
+    <FluentNavLink Href="@WebRoutes.Tools">Tools</FluentNavLink>
+    <FluentNavLink Href="@WebRoutes.Resources">Resources</FluentNavLink>
+    <FluentNavLink Href="@WebRoutes.Prompts">Prompts</FluentNavLink>
 
     <FluentNavGroup Title="Observability">
-        <FluentNavLink Href="/account/claims">Claims</FluentNavLink>
-        <FluentNavLink Href="/trace">MCP Trace</FluentNavLink>
-        <FluentNavLink Href="/audit">Audit Log</FluentNavLink>
+        <FluentNavLink Href="@WebRoutes.Account.Claims">Claims</FluentNavLink>
+        <FluentNavLink Href="@WebRoutes.Trace">MCP Trace</FluentNavLink>
+        <FluentNavLink Href="@WebRoutes.Audit">Audit Log</FluentNavLink>
     </FluentNavGroup>
 </FluentNavMenu>

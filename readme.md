@@ -7,6 +7,7 @@ A Model Context Protocol (MCP) server for a law firm practice management system,
 The Law-Corp MCP server exposes a fictional law firm's data and workflows to an LLM client (e.g. Claude Desktop). It demonstrates:
 
 - **Tools** — structured actions the LLM can invoke (search cases, draft documents, log time, run conflict checks)
+- **Role-based tool access** — `tools/list` is filtered per caller role; denied `tools/call` requests receive a structured error before any handler runs
 - **Resources** — firm data exposed as readable URIs (`lawcorp://cases/...`, `lawcorp://documents/...`)
 - **Prompts** — reusable prompt templates for common legal tasks
 - **Sampling** — server-initiated LLM calls for AI-assisted enrichment (document classification, deadline extraction)
@@ -48,6 +49,7 @@ See [`src/LawCorp.Mcp.Web/README.md`](./src/LawCorp.Mcp.Web/README.md) for the B
 See [`docs/local-dev.md`](./docs/local-dev.md) for the complete local development guide (MCP Inspector, Claude Desktop, VS Code/Cursor, Claude Code).
 See [`docs/auth-config.md`](./docs/auth-config.md) for Microsoft Entra ID authentication setup (Azure app registration, appsettings, OBO token exchange).
 See [`docs/local-mcp-inspect-auth.md`](./docs/local-mcp-inspect-auth.md) for testing authentication locally with the MCP Inspector and real Entra ID personas.
+See [`docs/tool-permissions.md`](./docs/tool-permissions.md) for the role-to-tool permission matrix, how the MCP filter pipeline enforces it, and how to extend it.
 
 ## Repo Layout
 

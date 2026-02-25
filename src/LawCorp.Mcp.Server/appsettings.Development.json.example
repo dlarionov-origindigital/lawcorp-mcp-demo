@@ -22,7 +22,15 @@
   "AzureAd": {
     "Instance": "https://login.microsoftonline.com/",
     "TenantId": "YOUR_TENANT_ID",
-    "ClientId": "YOUR_CLIENT_ID",
-    "ClientSecret": "YOUR_CLIENT_SECRET"
+    "ClientId": "YOUR_MCP_SERVER_CLIENT_ID (from 'LawCorp MCP Server' registration)",
+    "ClientSecret": "YOUR_MCP_SERVER_CLIENT_SECRET (from 'LawCorp MCP Server' → Certificates & secrets)"
+  },
+  "DownstreamApis": {
+    "ExternalApi": {
+      "BaseUrl": "http://localhost:5002",
+
+      "_Scopes_help": "Replace YOUR_EXTERNAL_API_CLIENT_ID with the Application (client) ID from the 'LawCorp External API' app registration. See docs/auth-config.md Step 11.",
+      "Scopes": [ "api://YOUR_EXTERNAL_API_CLIENT_ID/data.read" ]
+    }
   }
 }
