@@ -19,13 +19,13 @@
                 {
                     <span class="lc-identity-card__role">@role</span>
                 }
-                <a href="MicrosoftIdentity/Account/SignOut" style="margin-left: 12px; text-decoration: none;">
+                <a href="MicrosoftIdentity/Account/SignOut" data-enhance-nav="false" style="margin-left: 12px; text-decoration: none;">
                     <FluentButton Appearance="Appearance.Stealth" Style="color: var(--lc-color-text-inverse);">Sign out</FluentButton>
                 </a>
             </FluentStack>
         </Authorized>
         <NotAuthorized>
-            <a href="MicrosoftIdentity/Account/SignIn" style="text-decoration: none;">
+            <a href="MicrosoftIdentity/Account/SignIn" data-enhance-nav="false" style="text-decoration: none;">
                 <FluentButton Appearance="Appearance.Accent">Sign in</FluentButton>
             </a>
         </NotAuthorized>

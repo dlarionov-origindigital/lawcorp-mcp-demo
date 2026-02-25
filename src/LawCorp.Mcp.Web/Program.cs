@@ -40,7 +40,6 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseAntiforgery();
 
 if (useAuth)
 {
@@ -48,6 +47,8 @@ if (useAuth)
     app.UseAuthorization();
     app.MapControllers();
 }
+
+app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
