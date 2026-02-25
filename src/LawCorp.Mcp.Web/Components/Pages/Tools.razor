@@ -3,7 +3,10 @@
 
 @inject IMcpClientService McpClient
 @inject ILogger<Tools> Logger
+@inject NavigationManager Navigation
+@inject IConfiguration Configuration
 
+@using Microsoft.Identity.Web
 @using ModelContextProtocol.Client
 @using ModelContextProtocol.Protocol
 @using System.Text.Json
@@ -259,6 +262,12 @@ else
         {
             _tools = await McpClient.ListToolsAsync();
         }
+        catch (Exception ex) when (IsAuthChallenge(ex))
+        {
+            Logger.LogWarning("Token cache empty or consent required — redirecting to sign-in");
+            Navigation.NavigateTo("MicrosoftIdentity/Account/SignIn", forceLoad: true);
+            return;
+        }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to list MCP tools");
@@ -318,6 +327,12 @@ else
                 _resultIsError ? "Tool error" : TruncateSummary(_resultText)));
 
             if (_history.Count > 10) _history.RemoveAt(10);
+        }
+        catch (Exception ex) when (IsAuthChallenge(ex))
+        {
+            Logger.LogWarning("Token expired during tool invocation — redirecting to sign-in");
+            Navigation.NavigateTo("MicrosoftIdentity/Account/SignIn", forceLoad: true);
+            return;
         }
         catch (Exception ex)
         {
@@ -433,4 +448,13 @@ else
         var single = text.ReplaceLineEndings(" ").Trim();
         return single.Length <= max ? single : single[..max] + "…";
     }
+
+    // ── Auth helpers ──────────────────────────────────────────────────────────
+
+    private bool IsAuthChallenge(Exception ex) =>
+        Configuration.GetValue<bool>("UseAuth") && ContainsAuthChallenge(ex);
+
+    private static bool ContainsAuthChallenge(Exception? ex) =>
+        ex is MicrosoftIdentityWebChallengeUserException
+        || (ex?.InnerException is not null && ContainsAuthChallenge(ex.InnerException));
 }
