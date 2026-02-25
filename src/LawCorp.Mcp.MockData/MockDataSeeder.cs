@@ -2,6 +2,7 @@ using LawCorp.Mcp.Core.Models;
 using LawCorp.Mcp.Data;
 using LawCorp.Mcp.MockData.Generators;
 using LawCorp.Mcp.MockData.Partials;
+using LawCorp.Mcp.MockData.Personas;
 using LawCorp.Mcp.MockData.Profiles;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,15 +12,19 @@ namespace LawCorp.Mcp.MockData;
 /// Orchestrates deterministic mock data generation and seeds the LawCorpDbContext.
 /// Use <see cref="SmallFirmProfile"/> for unit tests, <see cref="MediumFirmProfile"/> for dev, <see cref="LargeFirmProfile"/> for load testing.
 /// </summary>
-public class MockDataSeeder(LawCorpDbContext db, IFirmProfile? profile = null, int seed = 42)
+public class MockDataSeeder(
+    LawCorpDbContext db,
+    IFirmProfile? profile = null,
+    PersonaSeedConfig? personaSeedConfig = null,
+    int seed = 42)
 {
     private readonly IFirmProfile _profile = profile ?? new MediumFirmProfile();
     private readonly Random _rng = new(seed);
 
     public async Task SeedAsync(CancellationToken ct = default)
     {
-        if (await db.Attorneys.AnyAsync(ct))
-            return; // Already seeded — idempotent
+        if (await db.Users.AnyAsync(ct))
+            return;
 
         // 1. Practice groups (static reference data)
         var practiceGroups = SeedPracticeGroups();
@@ -31,19 +36,38 @@ public class MockDataSeeder(LawCorpDbContext db, IFirmProfile? profile = null, i
         await db.Courts.AddRangeAsync(courts, ct);
         await db.SaveChangesAsync(ct);
 
-        // 3. Attorneys
+        // 3. Persona fixture (seeded first so they get deterministic low IDs)
+        var personaSeeder = new PersonaSeeder(db, personaSeedConfig);
+        var personas = await personaSeeder.SeedAsync(ct);
+
+        // 4. Random attorneys (fill out the rest of the firm)
         var attorneyGen = new AttorneyGenerator(_rng);
-        var attorneys = attorneyGen.GenerateMany(_profile.AttorneyCount, practiceGroups).ToList();
-        await db.Attorneys.AddRangeAsync(attorneys, ct);
+        var generated = attorneyGen.GenerateMany(_profile.AttorneyCount, practiceGroups).ToList();
+
+        var randomUsers = generated.Select(g => g.User).ToList();
+        await db.Users.AddRangeAsync(randomUsers, ct);
         await db.SaveChangesAsync(ct);
 
-        // 4. Clients
+        // Link attorney details now that user IDs are assigned
+        var detailsList = generated.Select(g =>
+        {
+            g.Details.UserId = g.User.Id;
+            return g.Details;
+        }).ToList();
+        await db.AttorneyDetails.AddRangeAsync(detailsList, ct);
+        await db.SaveChangesAsync(ct);
+
+        // Collect all attorneys (personas + random) for case generation
+        var attorneys = new List<User> { personas.Harvey, personas.Kim, personas.Alan };
+        attorneys.AddRange(randomUsers);
+
+        // 5. Clients
         var clientGen = new ClientGenerator(_rng);
         var clients = clientGen.GenerateMany(_profile.ClientCount).ToList();
         await db.Clients.AddRangeAsync(clients, ct);
         await db.SaveChangesAsync(ct);
 
-        // 5. Cases + related data
+        // 6. Cases + related data
         var caseGen = new CaseGenerator(_rng);
         var docGen = new DocumentGenerator(_rng);
         var calGen = new CalendarGenerator(_rng);
@@ -62,7 +86,7 @@ public class MockDataSeeder(LawCorpDbContext db, IFirmProfile? profile = null, i
             var lead = caseAttorneys[_rng.Next(caseAttorneys.Count)];
             await db.CaseAssignments.AddAsync(new CaseAssignment
             {
-                CaseId = @case.Id, AttorneyId = lead.Id, Role = AssignmentRole.Lead,
+                CaseId = @case.Id, UserId = lead.Id, Role = AssignmentRole.Lead,
                 AssignedDate = @case.OpenDate
             }, ct);
 

@@ -41,7 +41,7 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
         var q = db.Cases
             .Include(c => c.PracticeGroup)
             .Include(c => c.Client)
-            .Include(c => c.Assignments).ThenInclude(a => a.Attorney)
+            .Include(c => c.Assignments).ThenInclude(a => a.User)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(query))
@@ -58,7 +58,7 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
             q = q.Where(c => c.PracticeGroup.Name.Contains(practiceGroup));
 
         if (assignedTo.HasValue)
-            q = q.Where(c => c.Assignments.Any(a => a.AttorneyId == assignedTo.Value));
+            q = q.Where(c => c.Assignments.Any(a => a.UserId == assignedTo.Value));
 
         if (!string.IsNullOrWhiteSpace(dateFrom) && DateOnly.TryParse(dateFrom, out var from))
             q = q.Where(c => c.OpenDate >= from);
@@ -70,7 +70,7 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
         // TODO This is access control and could be relegated to a centralized authorization service in the future
         // but we'll enforce it here for simplicity for now
         if (!user.IsPartner)
-            q = q.Where(c => c.Assignments.Any(a => a.AttorneyId == user.UserId));
+            q = q.Where(c => c.Assignments.Any(a => a.UserId == user.UserId));
 
         var totalCount = await q.CountAsync(ct);
         var cases = await q
@@ -91,7 +91,7 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
             estimatedValue = c.EstimatedValue,
             leadAttorney = c.Assignments
                 .Where(a => a.Role == AssignmentRole.Lead)
-                .Select(a => $"{a.Attorney.FirstName} {a.Attorney.LastName}")
+                .Select(a => $"{a.User.FirstName} {a.User.LastName}")
                 .FirstOrDefault()
         });
 
@@ -117,14 +117,14 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
             .Include(c => c.PracticeGroup)
             .Include(c => c.Client)
             .Include(c => c.Court)
-            .Include(c => c.Assignments).ThenInclude(a => a.Attorney)
+            .Include(c => c.Assignments).ThenInclude(a => a.User)
             .Include(c => c.Parties)
             .FirstOrDefaultAsync(c => c.Id == caseId, ct);
 
         if (c is null)
             return Error($"Case {caseId} not found.");
 
-        if (!user.IsPartner && !c.Assignments.Any(a => a.AttorneyId == user.UserId))
+        if (!user.IsPartner && !c.Assignments.Any(a => a.UserId == user.UserId))
             return Error("Access denied: you are not assigned to this case.");
 
         return JsonSerializer.Serialize(new
@@ -152,8 +152,8 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
             estimatedValue = c.EstimatedValue,
             team = c.Assignments.Select(a => new
             {
-                attorney = $"{a.Attorney.FirstName} {a.Attorney.LastName}",
-                email = a.Attorney.Email,
+                name = $"{a.User.FirstName} {a.User.LastName}",
+                email = a.User.Email,
                 role = a.Role.ToString(),
                 since = a.AssignedDate.ToString("yyyy-MM-dd")
             }),
@@ -204,7 +204,7 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
         }
 
         // Auth: lead attorney or partner
-        var isLead = c.Assignments.Any(a => a.AttorneyId == user.UserId && a.Role == AssignmentRole.Lead);
+        var isLead = c.Assignments.Any(a => a.UserId == user.UserId && a.Role == AssignmentRole.Lead);
         if (!user.IsPartner && !isLead)
             return Error("Only the lead attorney or a partner can update case status.");
 
@@ -241,15 +241,15 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
     // ── cases_assign_attorney ─────────────────────────────────────────────────
 
     [McpServerTool, Description(
-        "Assign or reassign an attorney to a case with a specified role. Partner-only action.")]
-    public async Task<string> CasesAssignAttorney(
+        "Assign or reassign a user to a case with a specified role. Partner-only action.")]
+    public async Task<string> CasesAssignUser(
         [Description("The unique case ID")] int caseId,
-        [Description("The attorney ID to assign")] int attorneyId,
+        [Description("The user ID to assign")] int userId,
         [Description("Role on the case: Lead, Supporting, or Reviewer")] string role,
         CancellationToken ct = default)
     {
         if (!user.IsPartner)
-            return Error("Only partners can assign attorneys to cases.");
+            return Error("Only partners can assign users to cases.");
 
         if (!Enum.TryParse<AssignmentRole>(role, ignoreCase: true, out var roleEnum))
             return Error($"Invalid role '{role}'. Valid values: Lead, Supporting, Reviewer.");
@@ -261,14 +261,14 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
         if (c is null)
             return Error($"Case {caseId} not found.");
 
-        var attorney = await db.Attorneys.FirstOrDefaultAsync(a => a.Id == attorneyId, ct);
-        if (attorney is null)
-            return Error($"Attorney {attorneyId} not found.");
+        var assignee = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+        if (assignee is null)
+            return Error($"User {userId} not found.");
 
-        if (!attorney.IsActive)
-            return Error($"{attorney.FirstName} {attorney.LastName} is inactive and cannot be assigned to cases.");
+        if (!assignee.IsActive)
+            return Error($"{assignee.FirstName} {assignee.LastName} is inactive and cannot be assigned to cases.");
 
-        var existing = c.Assignments.FirstOrDefault(a => a.AttorneyId == attorneyId);
+        var existing = c.Assignments.FirstOrDefault(a => a.UserId == userId);
         string action;
         if (existing is not null)
         {
@@ -280,7 +280,7 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
             await db.CaseAssignments.AddAsync(new CaseAssignment
             {
                 CaseId = caseId,
-                AttorneyId = attorneyId,
+                UserId = userId,
                 Role = roleEnum,
                 AssignedDate = DateOnly.FromDateTime(DateTime.UtcNow)
             }, ct);
@@ -291,14 +291,14 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
         {
             CaseId = caseId,
             EventType = CaseEventType.Assignment,
-            Title = $"Attorney {action}: {attorney.FirstName} {attorney.LastName}",
-            Description = $"{attorney.FirstName} {attorney.LastName} {action} as {roleEnum}.",
+            Title = $"User {action}: {assignee.FirstName} {assignee.LastName}",
+            Description = $"{assignee.FirstName} {assignee.LastName} {action} as {roleEnum}.",
             EventDate = DateTime.UtcNow,
             CreatedById = user.UserId
         }, ct);
 
-        await WriteAuditLog("AssignAttorney", "Case", caseId,
-            $"Attorney {attorney.FirstName} {attorney.LastName} (ID {attorneyId}) {action} as {roleEnum}.");
+        await WriteAuditLog("AssignUser", "Case", caseId,
+            $"{assignee.FirstName} {assignee.LastName} (ID {userId}) {action} as {roleEnum}.");
 
         await db.SaveChangesAsync(ct);
 
@@ -306,11 +306,11 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
         {
             success = true,
             caseId,
-            attorneyId,
-            attorney = $"{attorney.FirstName} {attorney.LastName}",
+            userId,
+            assignee = $"{assignee.FirstName} {assignee.LastName}",
             role = roleEnum.ToString(),
             action,
-            message = $"{attorney.FirstName} {attorney.LastName} has been {action} as {roleEnum} on case {caseId}."
+            message = $"{assignee.FirstName} {assignee.LastName} has been {action} as {roleEnum} on case {caseId}."
         }, JsonOpts);
     }
 
@@ -331,7 +331,7 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
         if (c is null)
             return Error($"Case {caseId} not found.");
 
-        if (!user.IsPartner && !c.Assignments.Any(a => a.AttorneyId == user.UserId))
+        if (!user.IsPartner && !c.Assignments.Any(a => a.UserId == user.UserId))
             return Error("Access denied: you are not assigned to this case.");
 
         var q = db.CaseEvents.Where(e => e.CaseId == caseId);
@@ -384,7 +384,7 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
         if (c is null)
             return Error($"Case {caseId} not found.");
 
-        if (!user.IsPartner && !c.Assignments.Any(a => a.AttorneyId == user.UserId))
+        if (!user.IsPartner && !c.Assignments.Any(a => a.UserId == user.UserId))
             return Error("Access denied: you are not assigned to this case.");
 
         var noteEvent = new CaseEvent

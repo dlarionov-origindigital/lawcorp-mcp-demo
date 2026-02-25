@@ -12,5 +12,5 @@ public class Deadline
     public int? AssignedToId { get; set; }
 
     public Case Case { get; set; } = null!;
-    public Attorney? AssignedTo { get; set; }
+    public User? AssignedTo { get; set; }
 }

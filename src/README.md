@@ -1,6 +1,6 @@
 # src/
 
-The .NET 9 solution for the Law-Corp MCP server. All runnable code, domain models, data access, mock data generation, and tests live here.
+The .NET 9 solution for the Law-Corp MCP platform. All runnable code, domain models, data access, mock data generation, tests, and the web application live here.
 
 ## Projects
 
@@ -10,15 +10,19 @@ The .NET 9 solution for the Law-Corp MCP server. All runnable code, domain model
 | `LawCorp.Mcp.Core` | Class library | Domain models and enums shared across all projects |
 | `LawCorp.Mcp.Data` | Class library | EF Core `DbContext`, entity configurations, migrations |
 | `LawCorp.Mcp.MockData` | Class library | Deterministic seeder that populates the database with realistic test data |
+| [`LawCorp.Mcp.Web`](./LawCorp.Mcp.Web/README.md) | Web app | Blazor Web App — MCP client demo and E2E test harness (Entra ID auth, Fluent UI) |
 | `LawCorp.Mcp.Tests` | xUnit | Unit and integration tests |
+| [`LawCorp.Mcp.Tests.E2E`](./LawCorp.Mcp.Tests.E2E/README.md) | xUnit + Playwright | E2E browser tests — Entra ID login automation, persona-based access validation |
 
 ## Project References
 
 ```
-Server  →  Core
-Data    →  Core
+Server   →  Core
+Web      →  Core
+Data     →  Core
 MockData →  Core, Data
-Tests   →  Core, Data, Server
+Tests    →  Core, Data, Server
+Tests.E2E → Web, MockData
 ```
 
 ## Development Setup
@@ -42,6 +46,14 @@ dotnet run --no-launch-profile --project LawCorp.Mcp.Server
 
 The server uses stdio transport — it is not an HTTP server. Connect via Claude Desktop or the MCP inspector tool. The `--no-launch-profile` flag is required to prevent `dotnet run` from printing launch profile info to stdout, which corrupts the JSON-RPC stream.
 
+**Run the web app**
+
+```bash
+dotnet run --project LawCorp.Mcp.Web --launch-profile https
+```
+
+Opens at `https://localhost:5001`. See [`LawCorp.Mcp.Web/README.md`](./LawCorp.Mcp.Web/README.md) for auth configuration and full details.
+
 **Run tests**
 
 ```bash
@@ -50,7 +62,7 @@ dotnet test LawCorp.Mcp.sln
 
 **Seed mock data**
 
-Mock data seeding is built into `LawCorp.Mcp.MockData`. Call `MockDataSeeder.SeedAsync(db)` with an EF Core `DbContext` instance. Seeding is idempotent (checks `db.Attorneys.AnyAsync()` before inserting). The seed is deterministic (`Random(42)`).
+Mock data seeding is built into `LawCorp.Mcp.MockData`. Call `MockDataSeeder.SeedAsync(db)` with an EF Core `DbContext` instance. Seeding is idempotent (checks `db.Users.AnyAsync()` before inserting). The seed is deterministic (`Random(42)`).
 
 ## Configuration
 

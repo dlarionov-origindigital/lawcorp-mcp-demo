@@ -1,0 +1,21 @@
+{
+  "UseAuth": true,
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug",
+      "Microsoft.AspNetCore": "Information"
+    }
+  },
+  "AzureAd": {
+    "Instance": "https://login.microsoftonline.com/",
+    "TenantId": "YOUR_TENANT_ID (same for both registrations)",
+    "ClientId": "YOUR_WEB_APP_CLIENT_ID (from 'LawCorp Web App' registration)",
+    "ClientSecret": "YOUR_WEB_APP_CLIENT_SECRET (from 'LawCorp Web App' → Certificates & secrets)"
+  },
+  "McpServer": {
+    "Endpoint": "http://localhost:5000/mcp",
+
+    "_Scopes_help": "Replace YOUR_MCP_SERVER_CLIENT_ID with the Application (client) ID from the 'LawCorp MCP Server' app registration (NOT the web app). Find it at Azure Portal → App registrations → LawCorp MCP Server → Overview. See docs/auth-config.md Step 5.",
+    "Scopes": [ "api://YOUR_MCP_SERVER_CLIENT_ID/access_as_user" ]
+  }
+}

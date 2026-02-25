@@ -31,14 +31,14 @@ public static class ResearchTools
         [Description("The case ID to associate the memo with")] int caseId,
         [Description("The legal topic of the memo")] string topic,
         [Description("The research findings and analysis")] string findings,
-        [Description("The attorney ID authoring the memo")] int authorId)
+        [Description("The user ID authoring the memo")] int authorId)
         => throw new NotImplementedException("research_create_memo is not yet implemented.");
 
     [McpServerTool, Description("Search existing research memos by topic, case, or author.")]
     public static string ResearchSearchMemos(
         [Description("Full-text search query")] string query,
         [Description("Filter by case ID")] int? caseId = null,
-        [Description("Filter by author attorney ID")] int? authorId = null,
+        [Description("Filter by author user ID")] int? authorId = null,
         int page = 1,
         int pageSize = 20)
         => throw new NotImplementedException("research_search_memos is not yet implemented.");

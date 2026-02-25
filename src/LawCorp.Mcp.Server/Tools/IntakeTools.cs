@@ -28,7 +28,7 @@ public static class IntakeTools
     [McpServerTool, Description("Approve or reject an intake request and optionally assign a partner. Partner-only action.")]
     public static string IntakeApprove(
         [Description("The unique intake request ID")] int requestId,
-        [Description("The partner ID to assign to the new matter")] int assignedPartnerId,
+        [Description("The partner user ID to assign to the new matter")] int assignedPartnerId,
         [Description("Optional notes on the approval or rejection decision")] string? notes = null)
         => throw new NotImplementedException("intake_approve is not yet implemented.");
 

@@ -13,6 +13,6 @@ public class IntakeRequest
     public int? ReviewedById { get; set; }
 
     public PracticeGroup PracticeGroup { get; set; } = null!;
-    public Attorney? ReviewedBy { get; set; }
+    public User? ReviewedBy { get; set; }
     public ICollection<ConflictCheck> ConflictChecks { get; set; } = new List<ConflictCheck>();
 }

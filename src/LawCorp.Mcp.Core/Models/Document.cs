@@ -15,5 +15,5 @@ public class Document
     public bool IsRedacted { get; set; }
 
     public Case Case { get; set; } = null!;
-    public Attorney Author { get; set; } = null!;
+    public User Author { get; set; } = null!;
 }

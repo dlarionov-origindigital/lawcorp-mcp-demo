@@ -10,5 +10,5 @@ public class ConflictCheck
     public string Notes { get; set; } = string.Empty;
 
     public IntakeRequest IntakeRequest { get; set; } = null!;
-    public Attorney CheckedBy { get; set; } = null!;
+    public User CheckedBy { get; set; } = null!;
 }

@@ -44,28 +44,25 @@ printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion
 ```
 
 See [`src/README.md`](./src/README.md) for full project structure and setup instructions.
+See [`src/LawCorp.Mcp.Web/README.md`](./src/LawCorp.Mcp.Web/README.md) for the Blazor web app (MCP client demo and E2E test harness).
 See [`docs/local-dev.md`](./docs/local-dev.md) for the complete local development guide (MCP Inspector, Claude Desktop, VS Code/Cursor, Claude Code).
+See [`docs/auth-config.md`](./docs/auth-config.md) for Microsoft Entra ID authentication setup (Azure app registration, appsettings, OBO token exchange).
+See [`docs/local-mcp-inspect-auth.md`](./docs/local-mcp-inspect-auth.md) for testing authentication locally with the MCP Inspector and real Entra ID personas.
 
 ## Repo Layout
 
 | Folder | Purpose |
 |---|---|
-| [`src/`](./src/README.md) | .NET solution — MCP server, domain model, data layer, mock data, tests |
+| [`src/`](./src/README.md) | .NET solution — MCP server, web app, domain model, data layer, mock data, tests |
 | [`docs/`](./docs/README.md) | Research notes, reference material, and [local dev guide](./docs/local-dev.md) |
 | [`proj-mgmt/`](./proj-mgmt/README.md) | Epics, features, stories, tasks, and architectural decisions |
 
 ## Tech Stack
 
-- **.NET 9** — Generic Host, stdio transport
-- **ModelContextProtocol 0.9.0-preview.2** — Official C# MCP SDK
+- **.NET 9** — Dual transport: Generic Host (stdio) + ASP.NET Core WebApplication (HTTP)
+- **Blazor Web App** — Interactive Server render mode, Fluent UI, Entra ID OIDC ([README](./src/LawCorp.Mcp.Web/README.md))
+- **ModelContextProtocol 1.0.0-rc.1** — Official C# MCP SDK + ASP.NET Core integration
 - **Entity Framework Core 9** — ORM with SQL Server Express
-- **Microsoft Entra ID** — Planned auth via OBO flow
+- **Microsoft Entra ID** — JWT Bearer auth + OBO flow (HTTP transport), OIDC (web app)
+- **Fluent UI Blazor 4** — Enterprise component library with theming and white-labelling
 - **xUnit** — Test framework
-
-## Development Rules
-
-- Never commit directly — all commits are made by the developer
-- See [`CLAUDE.md`](./CLAUDE.md) for Claude Code working instructions
-- See [`CLAUDE-WORKFLOW.md`](./CLAUDE-WORKFLOW.md) for Claude agent workflow rules
-- See [`COPILOT-RULES.md`](./COPILOT-RULES.md) for GitHub Copilot and team AI assistant rules
-- See [`proj-mgmt/README.md`](./proj-mgmt/README.md) for how work is tracked and organized

@@ -11,7 +11,7 @@ public static class DocumentTools
         [Description("Full-text search query")] string query,
         [Description("Filter by type: Motion, Brief, Contract, Correspondence, Evidence")] string? documentType = null,
         [Description("Filter by case ID")] int? caseId = null,
-        [Description("Filter by author attorney ID")] int? authorId = null,
+        [Description("Filter by author user ID")] int? authorId = null,
         int page = 1,
         int pageSize = 20)
         => throw new NotImplementedException("documents_search is not yet implemented.");
