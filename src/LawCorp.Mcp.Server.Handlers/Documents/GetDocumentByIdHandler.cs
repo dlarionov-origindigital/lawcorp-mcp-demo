@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using LawCorp.Mcp.Core.Auth;
 using LawCorp.Mcp.Core.Queries;
 using MediatR;
+using Microsoft.Extensions.Configuration;
 
 namespace LawCorp.Mcp.Server.Handlers.Documents;
 
@@ -12,7 +13,8 @@ namespace LawCorp.Mcp.Server.Handlers.Documents;
 /// </summary>
 public class GetDocumentByIdHandler(
     IHttpClientFactory httpClientFactory,
-    IDownstreamTokenProvider tokenProvider)
+    IDownstreamTokenProvider tokenProvider,
+    IConfiguration configuration)
     : IRequestHandler<GetDocumentByIdQuery, GetDocumentResult>
 {
     public async Task<GetDocumentResult> Handle(GetDocumentByIdQuery request, CancellationToken ct)
@@ -34,7 +36,9 @@ public class GetDocumentByIdHandler(
     private async Task<HttpClient> CreateAuthenticatedClient(CancellationToken ct)
     {
         var client = httpClientFactory.CreateClient("ExternalApi");
-        var token = await tokenProvider.AcquireTokenAsync(["api://external-api/data.read"], ct);
+        var scopes = configuration.GetSection("DownstreamApis:ExternalApi:Scopes").Get<string[]>()
+            ?? ["api://external-api/data.read"];
+        var token = await tokenProvider.AcquireTokenAsync(scopes, ct);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
     }

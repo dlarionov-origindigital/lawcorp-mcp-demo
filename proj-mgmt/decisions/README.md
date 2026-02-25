@@ -42,3 +42,5 @@ What open questions remain?
 | [005](./005-oauth-identity-passthrough.md) | Use OAuth identity passthrough as the user-delegated access pattern | Accepted |
 | [006](./006-web-app-architecture.md) | Add a white-labelled Blazor Web App as the MCP client demo and E2E test harness | Accepted |
 | [007](./007-normalize-user-identity-model.md) | Normalize user identity into a shared User table (3NF compliance) | Accepted |
+| [008](./008-cqrs-dispatch-pattern.md) | CQRS dispatch pattern for MCP tool handlers | Proposed |
+| [009](./009-swagger-ui-local-dev.md) | Add interactive Swagger UI for local development ergonomics | Accepted |

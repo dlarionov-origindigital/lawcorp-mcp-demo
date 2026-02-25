@@ -4,25 +4,29 @@ The .NET 9 solution for the Law-Corp MCP platform. All runnable code, domain mod
 
 ## Projects
 
-| Project | Type | Purpose |
-|---|---|---|
-| `LawCorp.Mcp.Server` | Executable | MCP stdio host — registers tools, resources, and prompts; entry point |
-| `LawCorp.Mcp.Core` | Class library | Domain models and enums shared across all projects |
-| `LawCorp.Mcp.Data` | Class library | EF Core `DbContext`, entity configurations, migrations |
-| `LawCorp.Mcp.MockData` | Class library | Deterministic seeder that populates the database with realistic test data |
-| [`LawCorp.Mcp.Web`](./LawCorp.Mcp.Web/README.md) | Web app | Blazor Web App — MCP client demo and E2E test harness (Entra ID auth, Fluent UI) |
-| `LawCorp.Mcp.Tests` | xUnit | Unit and integration tests |
-| [`LawCorp.Mcp.Tests.E2E`](./LawCorp.Mcp.Tests.E2E/README.md) | xUnit + Playwright | E2E browser tests — Entra ID login automation, persona-based access validation |
+| Project | Type | Port | Purpose |
+|---|---|---|---|
+| `LawCorp.Mcp.Server` | Executable | 5000 | MCP server (HTTP + stdio transport), dispatches tools via MediatR |
+| `LawCorp.Mcp.Server.Handlers` | Class library | — | MediatR command/query handlers (local DB + external API) |
+| `LawCorp.Mcp.ExternalApi` | Web API | 5002 | Independent DMS API (JWT Bearer, receives OBO tokens, own database) |
+| `LawCorp.Mcp.Core` | Class library | — | Domain models, enums, MediatR contracts shared across all projects |
+| `LawCorp.Mcp.Data` | Class library | — | EF Core `DbContext`, entity configurations, migrations |
+| `LawCorp.Mcp.MockData` | Class library | — | Deterministic seeder that populates the MCP server database |
+| [`LawCorp.Mcp.Web`](./LawCorp.Mcp.Web/README.md) | Web app | 5001/5003 | Blazor Web App — MCP client demo and E2E test harness |
+| `LawCorp.Mcp.Tests` | xUnit | — | Unit and integration tests |
+| [`LawCorp.Mcp.Tests.E2E`](./LawCorp.Mcp.Tests.E2E/README.md) | xUnit + Playwright | — | E2E browser tests |
 
 ## Project References
 
 ```
-Server   →  Core
-Web      →  Core
-Data     →  Core
-MockData →  Core, Data
-Tests    →  Core, Data, Server
-Tests.E2E → Web, MockData
+Server     →  Core, Data, MockData, Server.Handlers
+Handlers   →  Core, Data
+ExternalApi → Core
+Web        →  Core
+Data       →  Core
+MockData   →  Core, Data
+Tests      →  Core, Data, Server
+Tests.E2E  →  Web, MockData
 ```
 
 ## Development Setup
@@ -38,13 +42,23 @@ Tests.E2E → Web, MockData
 dotnet build LawCorp.Mcp.sln
 ```
 
-**Run the server**
+**Run the MCP server (stdio)**
 
 ```bash
 dotnet run --no-launch-profile --project LawCorp.Mcp.Server
 ```
 
-The server uses stdio transport — it is not an HTTP server. Connect via Claude Desktop or the MCP inspector tool. The `--no-launch-profile` flag is required to prevent `dotnet run` from printing launch profile info to stdout, which corrupts the JSON-RPC stream.
+The `--no-launch-profile` flag is required to prevent `dotnet run` from printing launch profile info to stdout, which corrupts the JSON-RPC stream.
+
+**Run the MCP server (HTTP) + External API**
+
+```bash
+# Terminal 1 — External API (DMS) on port 5002
+dotnet run --project LawCorp.Mcp.ExternalApi --launch-profile http
+
+# Terminal 2 — MCP Server on port 5000
+dotnet run --project LawCorp.Mcp.Server --launch-profile http
+```
 
 **Run the web app**
 
@@ -52,7 +66,9 @@ The server uses stdio transport — it is not an HTTP server. Connect via Claude
 dotnet run --project LawCorp.Mcp.Web --launch-profile https
 ```
 
-Opens at `https://localhost:5001`. See [`LawCorp.Mcp.Web/README.md`](./LawCorp.Mcp.Web/README.md) for auth configuration and full details.
+Opens at `https://localhost:5001`.
+
+See [`docs/local-dev.md`](../docs/local-dev.md) for the complete multi-service setup guide.
 
 **Run tests**
 

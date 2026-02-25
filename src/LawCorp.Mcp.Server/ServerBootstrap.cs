@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
+using Scalar.AspNetCore;
 
 namespace LawCorp.Mcp.Server;
 
@@ -59,6 +60,9 @@ public static class ServerBootstrap
         ConfigureAuth(builder.Services, builder.Configuration);
         RegisterSharedServices(builder.Services, builder.Configuration);
 
+        if (!builder.Environment.IsProduction())
+            builder.Services.AddOpenApi();
+
         builder.Services
             .AddMcpServer()
             .WithHttpTransport()
@@ -76,6 +80,12 @@ public static class ServerBootstrap
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseMiddleware<UserContextResolutionMiddleware>();
+        }
+
+        if (!app.Environment.IsProduction())
+        {
+            app.MapOpenApi();
+            app.MapScalarApiReference();
         }
 
         app.MapMcp();

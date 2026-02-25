@@ -7,7 +7,7 @@
 
 | ID | Feature | Status |
 |---|---|---|
-| [1.1](./1.1-solution-structure/1.1-solution-structure.md) | Solution & Project Structure | DONE |
+| [1.1](./1.1-solution-structure/1.1-solution-structure.md) | Solution & Project Structure | IN PROGRESS |
 | [1.2](./1.2-authn/1.2-authentication.md) | Authentication — Microsoft Entra ID | IN PROGRESS |
 | [1.3](./1.3-authz/1.3-authorization.md) | Custom Authorization Layer | BACKLOG |
 | [1.4](./1.4-external-api/1.4-external-api.md) | External Downstream API Service | IN PROGRESS |
@@ -18,6 +18,7 @@
 - [ADR-004](../../decisions/004-dual-transport-web-api-primary.md) — ASP.NET Core Web API as primary host
 - [ADR-005](../../decisions/005-oauth-identity-passthrough.md) — OAuth identity passthrough as user-delegated access pattern
 - [ADR-008](../../decisions/008-cqrs-dispatch-pattern.md) — CQRS dispatch pattern for MCP tool handlers
+- [ADR-009](../../decisions/009-swagger-ui-local-dev.md) — Interactive Swagger UI for local development ergonomics
 
 ## Dependencies
 

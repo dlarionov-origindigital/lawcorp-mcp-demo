@@ -1,4 +1,5 @@
 {
+  "UseAuth": false,
   "SeedDmsData": true,
   "Logging": {
     "LogLevel": {

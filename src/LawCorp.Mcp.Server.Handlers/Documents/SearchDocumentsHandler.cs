@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using LawCorp.Mcp.Core.Auth;
 using LawCorp.Mcp.Core.Queries;
 using MediatR;
+using Microsoft.Extensions.Configuration;
 
 namespace LawCorp.Mcp.Server.Handlers.Documents;
 
@@ -13,14 +14,17 @@ namespace LawCorp.Mcp.Server.Handlers.Documents;
 /// </summary>
 public class SearchDocumentsHandler(
     IHttpClientFactory httpClientFactory,
-    IDownstreamTokenProvider tokenProvider)
+    IDownstreamTokenProvider tokenProvider,
+    IConfiguration configuration)
     : IRequestHandler<SearchDocumentsQuery, SearchDocumentsResult>
 {
     public async Task<SearchDocumentsResult> Handle(SearchDocumentsQuery request, CancellationToken ct)
     {
         var client = await CreateAuthenticatedClient(ct);
 
-        var queryParams = new List<string> { $"query={Uri.EscapeDataString(request.Query)}" };
+        var queryParams = new List<string>();
+        if (!string.IsNullOrWhiteSpace(request.Query))
+            queryParams.Add($"query={Uri.EscapeDataString(request.Query)}");
         if (request.DocumentType is not null) queryParams.Add($"documentType={Uri.EscapeDataString(request.DocumentType)}");
         if (request.CaseId.HasValue) queryParams.Add($"caseId={request.CaseId.Value}");
         if (request.AuthorId.HasValue) queryParams.Add($"authorId={request.AuthorId.Value}");
@@ -40,7 +44,9 @@ public class SearchDocumentsHandler(
     private async Task<HttpClient> CreateAuthenticatedClient(CancellationToken ct)
     {
         var client = httpClientFactory.CreateClient("ExternalApi");
-        var token = await tokenProvider.AcquireTokenAsync(["api://external-api/data.read"], ct);
+        var scopes = configuration.GetSection("DownstreamApis:ExternalApi:Scopes").Get<string[]>()
+            ?? ["api://external-api/data.read"];
+        var token = await tokenProvider.AcquireTokenAsync(scopes, ct);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
     }

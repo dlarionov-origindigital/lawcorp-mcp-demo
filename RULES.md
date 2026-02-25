@@ -112,11 +112,11 @@ Use `[McpServerTool(Name = McpToolName.X.Y)]`. Do not rely on the SDK's PascalCa
 
 ### 8. Port allocation (local dev)
 
-| Service | Port | Project |
-|---|---|---|
-| MCP Server | 5000 | `LawCorp.Mcp.Server` |
-| Web App (HTTPS) | 5001 | `LawCorp.Mcp.Web` |
-| External API | 5002 | `LawCorp.Mcp.ExternalApi` |
+| Service | HTTP | HTTPS | Project |
+|---|---|---|---|
+| MCP Server | 5000 | — | `LawCorp.Mcp.Server` |
+| Web App | 5003 | 5001 | `LawCorp.Mcp.Web` |
+| External API (DMS) | 5002 | 7002 | `LawCorp.Mcp.ExternalApi` |
 
 ### 9. Preserve before removing
 

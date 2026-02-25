@@ -82,26 +82,65 @@ public class CaseManagementTools(IMediator mediator)
 
     [McpServerTool(Name = McpToolName.Cases.AssignUser), Description(
         "Assign or reassign a user to a case with a specified role. Partner-only action.")]
-    public static string CasesAssignUser(
+    public async Task<string> CasesAssignUser(
         [Description("The unique case ID")] int caseId,
         [Description("The user ID to assign")] int userId,
-        [Description("Role on the case: Lead, Supporting, or Reviewer")] string role)
-        => throw new NotImplementedException("cases_assign_user — pending MediatR migration.");
+        [Description("Role on the case: Lead, Supporting, or Reviewer")] string role,
+        CancellationToken ct = default)
+    {
+        var result = await mediator.Send(new AssignUserToCaseCommand(caseId, userId, role), ct);
+
+        if (!result.Success)
+            return JsonSerializer.Serialize(new { error = result.Error }, JsonOpts);
+
+        return JsonSerializer.Serialize(new
+        {
+            success = true,
+            result.Data,
+            result.Message
+        }, JsonOpts);
+    }
 
     [McpServerTool(Name = McpToolName.Cases.GetTimeline), Description(
         "Retrieve a chronological timeline of all events for a case. " +
         "Optionally filter by event type. Privileged notes are hidden from non-attorneys.")]
-    public static string CasesGetTimeline(
+    public async Task<string> CasesGetTimeline(
         [Description("The unique case ID")] int caseId,
-        [Description("Filter by event type: StatusChange, Assignment, Note, Filing, Hearing, Deadline, DocumentAdded, Other")] string? eventType = null)
-        => throw new NotImplementedException("cases_get_timeline — pending MediatR migration.");
+        [Description("Filter by event type: StatusChange, Assignment, Note, Filing, Hearing, Deadline, DocumentAdded, Other")] string? eventType = null,
+        CancellationToken ct = default)
+    {
+        var result = await mediator.Send(new GetCaseTimelineQuery(caseId, eventType), ct);
+
+        if (result.Error is not null)
+            return JsonSerializer.Serialize(new { error = result.Error }, JsonOpts);
+
+        return JsonSerializer.Serialize(new
+        {
+            caseId = result.CaseId,
+            eventCount = result.EventCount,
+            events = result.Events
+        }, JsonOpts);
+    }
 
     [McpServerTool(Name = McpToolName.Cases.AddNote), Description(
         "Add a note or comment to a case record. " +
         "Privileged notes are visible only to attorneys (not paralegals or interns).")]
-    public static string CasesAddNote(
+    public async Task<string> CasesAddNote(
         [Description("The unique case ID")] int caseId,
         [Description("The note content")] string content,
-        [Description("Mark as attorney-client privileged")] bool isPrivileged = false)
-        => throw new NotImplementedException("cases_add_note — pending MediatR migration.");
+        [Description("Mark as attorney-client privileged")] bool isPrivileged = false,
+        CancellationToken ct = default)
+    {
+        var result = await mediator.Send(new AddCaseNoteCommand(caseId, content, isPrivileged), ct);
+
+        if (!result.Success)
+            return JsonSerializer.Serialize(new { error = result.Error }, JsonOpts);
+
+        return JsonSerializer.Serialize(new
+        {
+            success = true,
+            result.Data,
+            result.Message
+        }, JsonOpts);
+    }
 }

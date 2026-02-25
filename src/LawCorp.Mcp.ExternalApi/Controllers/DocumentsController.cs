@@ -19,6 +19,7 @@ public class DocumentsController(DmsDbContext db) : ControllerBase
         [FromQuery] string? query = null,
         [FromQuery] string? documentType = null,
         [FromQuery] int? caseId = null,
+        [FromQuery] string? matterNumber = null,
         [FromQuery] int? authorId = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
@@ -42,11 +43,10 @@ public class DocumentsController(DmsDbContext db) : ControllerBase
             Enum.TryParse<DmsDocumentType>(documentType, ignoreCase: true, out var typeEnum))
             q = q.Where(d => d.DocumentType == typeEnum);
 
-        if (caseId.HasValue)
-        {
-            var matterNumber = $"M-2025-{caseId.Value:D3}";
+        if (!string.IsNullOrWhiteSpace(matterNumber))
             q = q.Where(d => d.Workspace.MatterNumber == matterNumber);
-        }
+        else if (caseId.HasValue)
+            q = q.Where(d => d.WorkspaceId == caseId.Value);
 
         if (caller.Role is FirmRole.Intern or FirmRole.Paralegal or FirmRole.LegalAssistant)
             q = q.Where(d => !d.IsPrivileged);
