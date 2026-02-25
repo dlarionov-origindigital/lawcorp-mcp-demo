@@ -248,6 +248,8 @@ curl -s -X POST \
   | jq -r '.access_token'
 ```
 
+NOTE: Entra may have you complete a password reset in which case you can add an 'e' i.e. 'Welcom123@!' => 'Welcom123e@!'.  
+
 > **ROPC prerequisites:** Your tenant must allow ROPC (Entra ID → Authentication → Advanced settings → "Allow public client flows" = Yes). ROPC does not work with MFA-enabled accounts. See [Microsoft ROPC documentation](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth-ropc).
 
 ### Option C: Interactive browser flow
