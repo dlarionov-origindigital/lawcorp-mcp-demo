@@ -1,4 +1,5 @@
 using LawCorp.Mcp.Web.Components;
+using LawCorp.Mcp.Web.Services;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.FluentUI.AspNetCore.Components;
 using Microsoft.Identity.Web;
@@ -30,6 +31,9 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddFluentUIComponents();
+
+// ── MCP Client ───────────────────────────────────────────────────────────────
+builder.Services.AddScoped<IMcpClientService, McpClientService>();
 
 var app = builder.Build();
 
