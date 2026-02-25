@@ -1,3 +1,4 @@
+using LawCorp.Mcp.Core;
 using LawCorp.Mcp.Core.Auth;
 using LawCorp.Mcp.Core.Models;
 using LawCorp.Mcp.Data;
@@ -21,7 +22,7 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
 
     // ── cases_search ─────────────────────────────────────────────────────────
 
-    [McpServerTool, Description(
+    [McpServerTool(Name = McpToolName.Cases.Search), Description(
         "Search cases by keyword, status, practice group, assigned attorney, and date range. " +
         "Returns paginated results with case summaries.")]
     public async Task<string> CasesSearch(
@@ -107,7 +108,7 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
 
     // ── cases_get ─────────────────────────────────────────────────────────────
 
-    [McpServerTool, Description(
+    [McpServerTool(Name = McpToolName.Cases.Get), Description(
         "Retrieve full case details by case ID, including assigned team, parties, court, and key dates.")]
     public async Task<string> CasesGet(
         [Description("The unique case ID")] int caseId,
@@ -168,7 +169,7 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
 
     // ── cases_update_status ───────────────────────────────────────────────────
 
-    [McpServerTool, Description(
+    [McpServerTool(Name = McpToolName.Cases.UpdateStatus), Description(
         "Update the status of a case. " +
         "Valid transitions: Active → OnHold | Closed | Settled; OnHold → Active. " +
         "Requires lead attorney or partner role.")]
@@ -240,7 +241,7 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
 
     // ── cases_assign_attorney ─────────────────────────────────────────────────
 
-    [McpServerTool, Description(
+    [McpServerTool(Name = McpToolName.Cases.AssignUser), Description(
         "Assign or reassign a user to a case with a specified role. Partner-only action.")]
     public async Task<string> CasesAssignUser(
         [Description("The unique case ID")] int caseId,
@@ -316,7 +317,7 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
 
     // ── cases_get_timeline ────────────────────────────────────────────────────
 
-    [McpServerTool, Description(
+    [McpServerTool(Name = McpToolName.Cases.GetTimeline), Description(
         "Retrieve a chronological timeline of all events for a case. " +
         "Optionally filter by event type. Privileged notes are hidden from non-attorneys.")]
     public async Task<string> CasesGetTimeline(
@@ -364,7 +365,7 @@ public class CaseManagementTools(LawCorpDbContext db, IUserContext user)
 
     // ── cases_add_note ────────────────────────────────────────────────────────
 
-    [McpServerTool, Description(
+    [McpServerTool(Name = McpToolName.Cases.AddNote), Description(
         "Add a note or comment to a case record. " +
         "Privileged notes are visible only to attorneys (not paralegals or interns).")]
     public async Task<string> CasesAddNote(
