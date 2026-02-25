@@ -1,3 +1,4 @@
+using LawCorp.Mcp.Web;
 using Microsoft.Identity.Web;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
@@ -37,16 +38,16 @@ public sealed class McpClientService : IMcpClientService, IAsyncDisposable
             if (_client is not null && State == McpClientState.Ready)
                 return _client;
 
-            var endpoint = _config["McpServer:Endpoint"] ?? "http://localhost:5000/mcp";
+            var endpoint = _config[AppConfigKeys.McpServer.Endpoint] ?? AppConfigKeys.McpServer.DefaultEndpoint;
             var httpClient = new HttpClient();
 
             // 8.2.2: attach bearer token when auth is enabled
-            if (_config.GetValue<bool>("UseAuth"))
+            if (_config.GetValue<bool>(AppConfigKeys.UseAuth))
             {
                 var tokenAcquisition = _services.GetService<ITokenAcquisition>();
                 if (tokenAcquisition is not null)
                 {
-                    var scopes = _config.GetSection("McpServer:Scopes").Get<string[]>() ?? [];
+                    var scopes = _config.GetSection(AppConfigKeys.McpServer.Scopes).Get<string[]>() ?? [];
                     var token = await tokenAcquisition.GetAccessTokenForUserAsync(scopes);
                     httpClient.DefaultRequestHeaders.Authorization =
                         new AuthenticationHeaderValue("Bearer", token);

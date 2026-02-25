@@ -265,7 +265,7 @@ else
         catch (Exception ex) when (IsAuthChallenge(ex))
         {
             Logger.LogWarning("Token cache empty or consent required — redirecting to sign-in");
-            Navigation.NavigateTo("MicrosoftIdentity/Account/SignIn", forceLoad: true);
+            Navigation.NavigateTo(WebRoutes.Auth.SignIn, forceLoad: true);
             return;
         }
         catch (Exception ex)
@@ -331,7 +331,7 @@ else
         catch (Exception ex) when (IsAuthChallenge(ex))
         {
             Logger.LogWarning("Token expired during tool invocation — redirecting to sign-in");
-            Navigation.NavigateTo("MicrosoftIdentity/Account/SignIn", forceLoad: true);
+            Navigation.NavigateTo(WebRoutes.Auth.SignIn, forceLoad: true);
             return;
         }
         catch (Exception ex)
@@ -452,7 +452,7 @@ else
     // ── Auth helpers ──────────────────────────────────────────────────────────
 
     private bool IsAuthChallenge(Exception ex) =>
-        Configuration.GetValue<bool>("UseAuth") && ContainsAuthChallenge(ex);
+        Configuration.GetValue<bool>(AppConfigKeys.UseAuth) && ContainsAuthChallenge(ex);
 
     private static bool ContainsAuthChallenge(Exception? ex) =>
         ex is MicrosoftIdentityWebChallengeUserException

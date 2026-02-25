@@ -12,20 +12,20 @@
                     @context.User.Identity?.Name
                 </span>
                 @{
-                    var role = context.User.Claims.FirstOrDefault(c => c.Type == "roles")?.Value
+                    var role = context.User.Claims.FirstOrDefault(c => c.Type == AppClaimTypes.Roles)?.Value
                             ?? context.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
                 }
                 @if (!string.IsNullOrEmpty(role))
                 {
                     <span class="lc-identity-card__role">@role</span>
                 }
-                <a href="MicrosoftIdentity/Account/SignOut" data-enhance-nav="false" style="margin-left: 12px; text-decoration: none;">
+                <a href="@WebRoutes.Auth.SignOut" data-enhance-nav="false" style="margin-left: 12px; text-decoration: none;">
                     <FluentButton Appearance="Appearance.Stealth" Style="color: var(--lc-color-text-inverse);">Sign out</FluentButton>
                 </a>
             </FluentStack>
         </Authorized>
         <NotAuthorized>
-            <a href="MicrosoftIdentity/Account/SignIn" data-enhance-nav="false" style="text-decoration: none;">
+            <a href="@WebRoutes.Auth.SignIn" data-enhance-nav="false" style="text-decoration: none;">
                 <FluentButton Appearance="Appearance.Accent">Sign in</FluentButton>
             </a>
         </NotAuthorized>
@@ -37,7 +37,7 @@ else
 }
 
 @code {
-    private bool UseAuth => Configuration.GetValue<bool>("UseAuth");
+    private bool UseAuth => Configuration.GetValue<bool>(AppConfigKeys.UseAuth);
 
     private static string GetInitials(string? name)
     {

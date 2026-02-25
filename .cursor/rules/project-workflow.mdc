@@ -17,9 +17,11 @@ alwaysApply: true
 
 ## Critical Code Conventions
 
-### No Magic Strings for Tool Names
+### No Magic Strings
 
-All MCP tool names are defined once in `src/LawCorp.Mcp.Core/McpToolName.cs` as `const string` fields.
+Enumerable string values are defined once as `const string` fields in dedicated constant classes. Never write raw string literals for these categories anywhere in code.
+
+**MCP tool names** → `src/LawCorp.Mcp.Core/McpToolName.cs`
 
 ```csharp
 // ✅ CORRECT
@@ -29,7 +31,39 @@ All MCP tool names are defined once in `src/LawCorp.Mcp.Core/McpToolName.cs` as 
 [McpServerTool(Name = "cases_search"), Description("...")]
 ```
 
-Always use `McpToolName.X.Y` — never write raw tool name string literals anywhere in code.
+**Web app routes** → `src/LawCorp.Mcp.Web/WebRoutes.cs`
+
+```csharp
+// ✅ CORRECT
+Navigation.NavigateTo(WebRoutes.Auth.SignIn, forceLoad: true);
+<FluentNavLink Href="@WebRoutes.Tools">Tools</FluentNavLink>
+
+// ❌ WRONG
+Navigation.NavigateTo("MicrosoftIdentity/Account/SignIn", forceLoad: true);
+<FluentNavLink Href="/tools">Tools</FluentNavLink>
+```
+
+Note: Blazor `@page` directives require string literals — that is the one exception.
+
+**Configuration keys** → `src/LawCorp.Mcp.Web/AppConfigKeys.cs`
+
+```csharp
+// ✅ CORRECT
+config.GetValue<bool>(AppConfigKeys.UseAuth)
+
+// ❌ WRONG
+config.GetValue<bool>("UseAuth")
+```
+
+**Custom claim types** → `src/LawCorp.Mcp.Web/AppClaimTypes.cs`
+
+```csharp
+// ✅ CORRECT
+c.Type == AppClaimTypes.Roles
+
+// ❌ WRONG
+c.Type == "roles"
+```
 
 ### `McpServerToolAttribute.Name` Must Always Be Set
 

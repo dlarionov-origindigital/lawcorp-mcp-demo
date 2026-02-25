@@ -1,9 +1,9 @@
 @page "/"
 
-<PageTitle>@(Configuration["Branding:AppName"] ?? "Law-Corp")</PageTitle>
+<PageTitle>@(Configuration[AppConfigKeys.Branding.AppName] ?? AppConfigKeys.Branding.DefaultAppName)</PageTitle>
 
-<h1 class="lc-page-title">@(Configuration["Branding:AppName"] ?? "Law-Corp")</h1>
-<p class="lc-page-subtitle">@(Configuration["Branding:Tagline"] ?? "Corporate law. Corporately.")</p>
+<h1 class="lc-page-title">@(Configuration[AppConfigKeys.Branding.AppName] ?? AppConfigKeys.Branding.DefaultAppName)</h1>
+<p class="lc-page-subtitle">@(Configuration[AppConfigKeys.Branding.Tagline] ?? AppConfigKeys.Branding.DefaultTagline)</p>
 
 <div class="lc-divider"></div>
 
@@ -16,9 +16,9 @@
                 <div class="lc-identity-card__details">
                     <span class="lc-identity-card__name">@context.User.Identity?.Name</span>
                     @{
-                        var role = context.User.Claims.FirstOrDefault(c => c.Type == "roles")?.Value
+                        var role = context.User.Claims.FirstOrDefault(c => c.Type == AppClaimTypes.Roles)?.Value
                                 ?? context.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
-                        var email = context.User.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value;
+                        var email = context.User.Claims.FirstOrDefault(c => c.Type == AppClaimTypes.PreferredUsername)?.Value;
                     }
                     @if (!string.IsNullOrEmpty(role))
                     {
@@ -55,7 +55,7 @@ else
         <span class="lc-capability-card__desc">
             Invoke MCP tools — search cases, draft documents, log time, run conflict checks.
         </span>
-        <a href="/tools" class="lc-capability-card__link">Browse tools &rarr;</a>
+        <a href="@WebRoutes.Tools" class="lc-capability-card__link">Browse tools &rarr;</a>
     </div>
 
     <div class="lc-capability-card">
@@ -63,7 +63,7 @@ else
         <span class="lc-capability-card__desc">
             Read firm data exposed as URI-addressable resources.
         </span>
-        <a href="/resources" class="lc-capability-card__link">Browse resources &rarr;</a>
+        <a href="@WebRoutes.Resources" class="lc-capability-card__link">Browse resources &rarr;</a>
     </div>
 
     <div class="lc-capability-card">
@@ -71,11 +71,11 @@ else
         <span class="lc-capability-card__desc">
             Use reusable prompt templates for common legal workflows.
         </span>
-        <a href="/prompts" class="lc-capability-card__link">Browse prompts &rarr;</a>
+        <a href="@WebRoutes.Prompts" class="lc-capability-card__link">Browse prompts &rarr;</a>
     </div>
 </div>
 
 @code {
     [Inject] private IConfiguration Configuration { get; set; } = default!;
-    private bool UseAuth => Configuration.GetValue<bool>("UseAuth");
+    private bool UseAuth => Configuration.GetValue<bool>(AppConfigKeys.UseAuth);
 }
