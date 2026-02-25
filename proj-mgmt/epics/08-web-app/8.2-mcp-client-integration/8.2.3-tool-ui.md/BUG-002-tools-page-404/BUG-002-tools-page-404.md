@@ -1,6 +1,6 @@
 # BUG-002: Tools page returns 404 — MCP endpoint path mismatch
 
-**Status:** OPEN
+**Status:** FIXED
 **Type:** Bug
 **Story:** [8.2.3: Tool discovery and invocation UI](../8.2.3-tool-invocation-ui.md)
 **Feature:** [8.2: MCP Client Integration](../../8.2-mcp-client-integration.md)

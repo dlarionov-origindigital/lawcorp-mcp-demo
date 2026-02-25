@@ -7,10 +7,13 @@ using LawCorp.Mcp.Server.Auth;
 using LawCorp.Mcp.Server.Tools;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using ModelContextProtocol.Server;
 using Scalar.AspNetCore;
 
@@ -60,6 +63,8 @@ public static class ServerBootstrap
         ConfigureAuth(builder.Services, builder.Configuration);
         RegisterSharedServices(builder.Services, builder.Configuration);
 
+        builder.Services.AddHealthChecks();
+
         if (!builder.Environment.IsProduction())
             builder.Services.AddOpenApi();
 
@@ -82,13 +87,18 @@ public static class ServerBootstrap
             app.UseMiddleware<UserContextResolutionMiddleware>();
         }
 
+        app.MapHealthChecks("/api/health", new HealthCheckOptions
+        {
+            ResponseWriter = WriteHealthResponse
+        }).AllowAnonymous();
+
         if (!app.Environment.IsProduction())
         {
             app.MapOpenApi();
             app.MapScalarApiReference();
         }
 
-        app.MapMcp();
+        app.MapMcp("/mcp");
 
         await SeedIfConfiguredAsync(app.Services, builder.Configuration);
         await app.RunAsync();
@@ -188,6 +198,24 @@ public static class ServerBootstrap
         {
             services.AddSingleton<IDownstreamTokenProvider, NoOpTokenProvider>();
         }
+    }
+
+    private static async Task WriteHealthResponse(HttpContext context, HealthReport report)
+    {
+        context.Response.ContentType = "application/json";
+        var response = new
+        {
+            status = report.Status.ToString(),
+            service = "LawCorp MCP Server",
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description,
+                duration = e.Value.Duration.TotalMilliseconds
+            })
+        };
+        await context.Response.WriteAsJsonAsync(response);
     }
 
     private static async Task SeedIfConfiguredAsync(IServiceProvider services, IConfiguration configuration)
