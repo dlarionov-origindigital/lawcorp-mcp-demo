@@ -1,0 +1,61 @@
+---
+description: Main project workflow and coding rules for all AI agents on this project
+alwaysApply: true
+---
+
+# Law-Corp MCP — Project Rules
+
+> **See `CLAUDE.md` at the repo root for the full authoritative rule set.**
+
+---
+
+## Git
+
+**Never create git commits.** Implement code, verify it, and hand off to the developer.
+
+---
+
+## Critical Code Conventions
+
+### No Magic Strings for Tool Names
+
+All MCP tool names are defined once in `src/LawCorp.Mcp.Core/McpToolName.cs` as `const string` fields.
+
+```csharp
+// ✅ CORRECT
+[McpServerTool(Name = McpToolName.Cases.Search), Description("...")]
+
+// ❌ WRONG
+[McpServerTool(Name = "cases_search"), Description("...")]
+```
+
+Always use `McpToolName.X.Y` — never write raw tool name string literals anywhere in code.
+
+### `McpServerToolAttribute.Name` Must Always Be Set
+
+Do not rely on SDK PascalCase→snake_case convention. Always set `Name` explicitly from `McpToolName`.
+
+### EF Core
+
+- Never set explicit IDs for operational entities
+- Use `ValueGeneratedNever()` only for reference/lookup data
+- Load navigation properties explicitly before accessing them
+
+### Config
+
+- Use `appsettings.Development.json` (gitignored) + `.example` (tracked) pattern
+- Never hardcode secrets or connection strings
+
+---
+
+## Project Management
+
+Work items live in `proj-mgmt/epics/NN-slug/`. Always read the item file before implementing. Update `**Status:**` and check off acceptance criteria when done. See `CLAUDE.md` for full workflow rules.
+
+---
+
+## Communication
+
+When SDK internals are hard to access (e.g., NuGet DLLs), ask the user directly instead of using decompilers or other indirect tools.
+
+Default to updating local project rules (`CLAUDE.md`, `.cursor/rules/`) so other developers benefit — not global user config.
