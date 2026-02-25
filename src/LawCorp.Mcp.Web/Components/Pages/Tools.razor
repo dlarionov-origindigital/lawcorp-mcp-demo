@@ -16,8 +16,7 @@
 @if (_loadError is not null)
 {
     <div class="lc-info-banner lc-info-banner--danger">
-        <FluentIcon Value="@(new Icons.Regular.Size16.Warning())" />
-        <span>Could not load tools: @_loadError</span>
+        Could not load tools: @_loadError
     </div>
 }
 else if (_loading)
@@ -67,7 +66,6 @@ else
             @if (_selected is null)
             {
                 <div class="lc-placeholder" style="height: 300px;">
-                    <FluentIcon Value="@(new Icons.Regular.Size48.Wrench())" Style="color: var(--lc-color-brand-primary); margin-bottom: var(--lc-space-md);" />
                     <span class="lc-placeholder__title">Select a tool</span>
                     <span class="lc-placeholder__desc">Choose a tool from the list to view its parameters and invoke it.</span>
                 </div>
@@ -101,7 +99,7 @@ else
                                 }
                                 @if (!string.IsNullOrEmpty(p.Description))
                                 {
-                                    <span class="lc-param-hint">@p.Description</span>
+                                    <span class="lc-param-hint">— @p.Description</span>
                                 }
                             </label>
 
@@ -111,14 +109,14 @@ else
                             }
                             else if (p.EnumValues is { Length: > 0 })
                             {
-                                <FluentSelect @bind-Value="_formValues[p.Name]" Style="width: 100%;">
+                                <FluentSelect TOption="string" @bind-Value="_formValues[p.Name]" Style="width: 100%;">
                                     @if (!p.Required)
                                     {
-                                        <FluentOption Value="">— any —</FluentOption>
+                                        <FluentOption TOption="string" Value="">— any —</FluentOption>
                                     }
                                     @foreach (var ev in p.EnumValues)
                                     {
-                                        <FluentOption Value="@ev">@ev</FluentOption>
+                                        <FluentOption TOption="string" Value="@ev">@ev</FluentOption>
                                     }
                                 </FluentSelect>
                             }
@@ -149,10 +147,9 @@ else
                 <!-- Invoke -->
                 <div>
                     <FluentButton Appearance="Appearance.Accent"
-                                  OnClick="InvokeAsync"
+                                  OnClick="InvokeToolAsync"
                                   Loading="_invoking"
                                   Disabled="_invoking">
-                        <FluentIcon Value="@(new Icons.Regular.Size16.Play())" Slot="start" />
                         Invoke
                     </FluentButton>
                 </div>
@@ -224,7 +221,7 @@ else
     private bool _invoking;
     private string? _validationError;
     private string? _invokeError;
-    private CallToolResponse? _result;
+    private CallToolResult? _result;
     private string? _resultText;
     private bool _resultIsError;
 
@@ -295,7 +292,7 @@ else
         _resultIsError = false;
     }
 
-    private async Task InvokeAsync()
+    private async Task InvokeToolAsync()
     {
         if (_selected is null) return;
 
@@ -317,24 +314,18 @@ else
             _resultText = FormatResult(response);
 
             _history.Insert(0, new InvocationRecord(
-                _selected.Name,
-                DateTime.Now,
-                !_resultIsError,
+                _selected.Name, DateTime.Now, !_resultIsError,
                 _resultIsError ? "Tool error" : TruncateSummary(_resultText)));
 
-            if (_history.Count > 10)
-                _history.RemoveAt(10);
+            if (_history.Count > 10) _history.RemoveAt(10);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Tool invocation failed for {Tool}", _selected.Name);
             _invokeError = ex.Message;
 
-            _history.Insert(0, new InvocationRecord(
-                _selected.Name, DateTime.Now, false, ex.Message));
-
-            if (_history.Count > 10)
-                _history.RemoveAt(10);
+            _history.Insert(0, new InvocationRecord(_selected.Name, DateTime.Now, false, ex.Message));
+            if (_history.Count > 10) _history.RemoveAt(10);
         }
         finally
         {
@@ -347,7 +338,6 @@ else
     private static List<ToolParam> ParseParams(McpClientTool tool)
     {
         var result = new List<ToolParam>();
-
         try
         {
             var schema = tool.JsonSchema;
@@ -356,7 +346,7 @@ else
 
             var required = schema.TryGetProperty("required", out var req)
                 ? req.EnumerateArray().Select(r => r.GetString()!).ToHashSet()
-                : [];
+                : new HashSet<string>();
 
             foreach (var prop in props.EnumerateObject())
             {
@@ -370,17 +360,13 @@ else
                     ? [.. e.EnumerateArray().Select(v => v.GetString()!)]
                     : null;
 
-                result.Add(new ToolParam(
-                    prop.Name, type, desc,
-                    required.Contains(prop.Name),
-                    enumVals));
+                result.Add(new ToolParam(prop.Name, type, desc, required.Contains(prop.Name), enumVals));
             }
         }
-        catch (Exception)
+        catch
         {
             // Malformed schema — return whatever we parsed so far
         }
-
         return result;
     }
 
@@ -391,8 +377,7 @@ else
         foreach (var p in _params.Where(p => p.Required))
         {
             if (p.Type == "boolean") continue;
-            var val = _formValues.GetValueOrDefault(p.Name, "");
-            if (string.IsNullOrWhiteSpace(val))
+            if (string.IsNullOrWhiteSpace(_formValues.GetValueOrDefault(p.Name, "")))
                 return $"'{p.Name}' is required.";
         }
         return null;
@@ -401,7 +386,6 @@ else
     private Dictionary<string, object?> BuildArguments()
     {
         var args = new Dictionary<string, object?>();
-
         foreach (var p in _params)
         {
             if (p.Type == "boolean")
@@ -420,19 +404,18 @@ else
                 _         => raw
             };
         }
-
         return args;
     }
 
     // ── Result Helpers ────────────────────────────────────────────────────────
 
-    private static string FormatResult(CallToolResponse response)
+    private static string FormatResult(CallToolResult result)
     {
-        var text = string.Join("\n\n", response.Content
-            .Where(c => c.Type == "text" && c.Text is not null)
-            .Select(c => c.Text!));
+        var text = string.Join("\n\n", result.Content
+            .OfType<TextContentBlock>()
+            .Select(c => c.Text));
 
-        // Pretty-print if it's JSON
+        // Pretty-print if the result is JSON
         try
         {
             using var doc = JsonDocument.Parse(text);

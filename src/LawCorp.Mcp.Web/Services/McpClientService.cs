@@ -16,7 +16,7 @@ public sealed class McpClientService : IMcpClientService, IAsyncDisposable
     private readonly IServiceProvider _services;
     private readonly SemaphoreSlim _lock = new(1, 1);
 
-    private IMcpClient? _client;
+    private McpClient? _client;
 
     public McpClientState State { get; private set; } = McpClientState.Connecting;
 
@@ -26,7 +26,7 @@ public sealed class McpClientService : IMcpClientService, IAsyncDisposable
         _services = services;
     }
 
-    private async Task<IMcpClient> EnsureClientAsync(CancellationToken ct)
+    private async Task<McpClient> EnsureClientAsync(CancellationToken ct)
     {
         if (_client is not null && State == McpClientState.Ready)
             return _client;
@@ -38,7 +38,7 @@ public sealed class McpClientService : IMcpClientService, IAsyncDisposable
                 return _client;
 
             var endpoint = _config["McpServer:Endpoint"] ?? "http://localhost:5000/mcp";
-            var httpClient = new HttpClient { BaseAddress = new Uri(endpoint) };
+            var httpClient = new HttpClient();
 
             // 8.2.2: attach bearer token when auth is enabled
             if (_config.GetValue<bool>("UseAuth"))
@@ -53,11 +53,12 @@ public sealed class McpClientService : IMcpClientService, IAsyncDisposable
                 }
             }
 
-            var transport = new SseClientTransport(
-                new SseClientTransportOptions { Endpoint = new Uri(endpoint) },
-                httpClient);
+            var transport = new HttpClientTransport(
+                new HttpClientTransportOptions { Endpoint = new Uri(endpoint) },
+                httpClient,
+                ownsHttpClient: true);
 
-            _client = await McpClientFactory.CreateAsync(transport, cancellationToken: ct);
+            _client = await McpClient.CreateAsync(transport, cancellationToken: ct);
             State = McpClientState.Ready;
             return _client;
         }
@@ -78,7 +79,7 @@ public sealed class McpClientService : IMcpClientService, IAsyncDisposable
         return await client.ListToolsAsync(cancellationToken: ct);
     }
 
-    public async Task<CallToolResponse> CallToolAsync(
+    public async Task<CallToolResult> CallToolAsync(
         string toolName,
         Dictionary<string, object?> arguments,
         CancellationToken ct = default)
