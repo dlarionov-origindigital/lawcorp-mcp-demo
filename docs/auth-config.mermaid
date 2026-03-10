@@ -1,0 +1,187 @@
+sequenceDiagram
+    %% Law-Corp MCP Server — Multi-Hop On-Behalf-Of (OBO) Authentication Flow
+    %% Three Entra ID App Registrations | .NET 9 | MCP SDK 1.0.0-rc.1
+    %% Transport: HTTP (Streamable HTTP + SSE) | UseAuth: true
+    %% ---
+    %% App Reg #1: LawCorp MCP Server  — JWT Bearer + OBO middle-tier
+    %%   Audience: api://[mcp-server-client-id]
+    %%   Exposes:  access_as_user (delegated)
+    %%   Consumes: Graph scopes, External API scopes (via OBO)
+    %% ---
+    %% App Reg #2: LawCorp Web App     — OIDC Authorization Code + PKCE
+    %%   Redirect: https://localhost:5001/signin-oidc
+    %%   Consumes: api://[mcp-server-id]/access_as_user
+    %% ---
+    %% App Reg #3: LawCorp External API — JWT Bearer (receives OBO tokens)
+    %%   Audience: api://[external-api-client-id]
+    %%   Exposes:  data.read, data.write (delegated)
+    autonumber
+
+    participant U as User (Browser)
+    participant E as Microsoft Entra ID<br/>login.microsoftonline.com
+    participant W as Blazor Web App<br/>App Reg #2 · OIDC<br/>https://localhost:5001
+    participant S as MCP Server<br/>App Reg #1 · JWT+OBO<br/>http://localhost:5000
+    participant DB as SQL Database<br/>LawCorpLocal
+    participant X as External API (DMS)<br/>App Reg #3 · JWT<br/>http://localhost:5002
+    participant G as Microsoft Graph<br/>graph.microsoft.com
+
+    Note over U,G: App Registration Topology<br/>Reg #1 MCP Server — aud: api://mcp-id — exposes: access_as_user<br/>Reg #2 Web App — OIDC client — consumes: access_as_user<br/>Reg #3 External API — aud: api://ext-id — exposes: data.read, data.write<br/>MCP Server holds a client_secret for OBO exchanges to Entra ID
+
+    %% ═══════════════════════════════════════════════════════════════
+    %% PHASE 1 — OIDC Sign-In (Authorization Code + PKCE)
+    %% ═══════════════════════════════════════════════════════════════
+
+    Note over U,G: PHASE 1 — OIDC Sign-In (Authorization Code + PKCE)
+
+    U ->> W: GET https://localhost:5001
+    activate W
+    W -->> U: 302 Redirect to Entra ID /authorize<br/>response_type=code, scope=openid profile<br/>redirect_uri=/signin-oidc, code_challenge=...
+    deactivate W
+
+    U ->> E: Credentials + MFA (if required)
+    activate E
+    E ->> E: Validate credentials against tenant directory
+    E ->> E: Lookup Enterprise App role assignment<br/>(Partner / Associate / OfCounsel /<br/>Paralegal / LegalAssistant / Intern)
+    E -->> W: 302 Redirect to /signin-oidc<br/>with authorization code
+    deactivate E
+
+    activate W
+    W ->> E: POST /oauth2/v2.0/token<br/>grant_type=authorization_code<br/>code=[auth_code]<br/>client_secret=[web_app_secret]<br/>code_verifier=[PKCE_verifier]
+    activate E
+    E -->> W: id_token + access_token + refresh_token
+    deactivate E
+
+    Note right of W: Token claims (audience = Web App ClientId):<br/>aud, iss, sub, oid (Object ID),<br/>tid (Tenant ID), name,<br/>preferred_username (UPN/email),<br/>roles: [assigned FirmRole]
+
+    W ->> W: OIDC middleware processes tokens<br/>Create ClaimsPrincipal from id_token<br/>Issue encrypted auth session cookie
+    W -->> U: Signed in — render identity card<br/>(DisplayName, FirmRole badge, Email)
+    deactivate W
+
+    %% ═══════════════════════════════════════════════════════════════
+    %% PHASE 2 — OBO Token Chain: Web App → MCP Server
+    %% ═══════════════════════════════════════════════════════════════
+
+    Note over U,G: PHASE 2 — MCP Tool Invocation with OBO Token Chain
+
+    U ->> W: Invoke MCP tool (e.g. "Search Cases for merger")
+    activate W
+
+    rect rgb(219, 234, 254)
+        Note over W,E: OBO Exchange #1 — Web App acquires token for MCP Server
+        W ->> E: POST /oauth2/v2.0/token<br/>grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer<br/>assertion=[user_access_token]<br/>scope=api://[mcp-server-id]/access_as_user<br/>client_id=[web_app_client_id]<br/>client_secret=[web_app_secret]<br/>requested_token_use=on_behalf_of
+        activate E
+        E ->> E: Validate assertion (signature, expiry, issuer)<br/>Verify Web App has admin-consented<br/>access_as_user permission on MCP Server<br/>Carry forward user oid, roles, name claims
+        E -->> W: OBO access_token for MCP Server
+        deactivate E
+        Note right of W: OBO token claims:<br/>aud = MCP Server ClientId<br/>iss = sts.windows.net/[tid]<br/>scp = access_as_user<br/>oid = original user Object ID<br/>name, preferred_username<br/>roles = [Partner/Associate/...]
+    end
+
+    W ->> S: POST /mcp (Streamable HTTP)<br/>Authorization: Bearer [mcp-obo-token]<br/>Content-Type: application/json<br/>JSON-RPC 2.0: tools/call<br/>SSE response stream for server events
+    deactivate W
+
+    %% ═══════════════════════════════════════════════════════════════
+    %% PHASE 3 — MCP Server ASP.NET Core Request Pipeline
+    %% ═══════════════════════════════════════════════════════════════
+
+    activate S
+    Note over S,DB: PHASE 3 — MCP Server Request Pipeline (ASP.NET Core Middleware)
+
+    rect rgb(254, 249, 231)
+        Note over S: 3a. JWT Bearer Authentication (Microsoft.Identity.Web)
+        S ->> S: Fetch Entra ID OpenID Connect metadata<br/>and signing keys (cached)
+        S ->> S: Validate JWT signature against tenant signing keys
+        S ->> S: Verify issuer = sts.windows.net/[tenant-id]
+        S ->> S: Verify audience = MCP Server ClientId
+        S ->> S: Verify token is not expired
+        S ->> S: Verify scp claim contains access_as_user
+        S ->> S: Populate HttpContext.User (ClaimsPrincipal)<br/>with all validated JWT claims
+    end
+
+    rect rgb(232, 245, 233)
+        Note over S,DB: 3b. UserContextResolutionMiddleware — Map JWT to Domain Identity
+        S ->> S: Extract claims from HttpContext.User:<br/>oid, name, roles, preferred_username
+        S ->> DB: SELECT Attorney + PracticeGroup + CaseAssignments<br/>WHERE EntraObjectId = [oid claim]
+        activate DB
+        DB -->> S: Attorney record with navigation properties<br/>(Id, FirstName, LastName, FirmRole,<br/>PracticeGroupId, CaseAssignmentIds,<br/>SupervisorId, DelegateIds)
+        deactivate DB
+        S ->> S: Instantiate EntraIdUserContext<br/>(UserId, DisplayName, FirmRole, Email)
+        S ->> S: Instantiate EntraFirmIdentityContext<br/>(PracticeGroupId, CaseAssignmentIds,<br/>SupervisorId, DelegatePrincipalIds)
+        S ->> S: Store in HttpContext.Items<br/>Register both in scoped DI container<br/>(IUserContext, IFirmIdentityContext)
+    end
+
+    rect rgb(243, 229, 245)
+        Note over S: 3c. ToolPermissionFilters — Role-Based Tool Access Control
+        S ->> S: Resolve FirmRole from IUserContext
+        S ->> S: Lookup ToolPermissionMatrix[FirmRole]<br/>to get set of permitted McpToolName values
+        S ->> S: For tools/list: filter response to only<br/>include tools the role can access
+        S ->> S: For tools/call: reject with error if<br/>requested tool is not in the permitted set
+        Note right of S: ToolPermissionMatrix examples:<br/>Partner → all tools<br/>Associate → case search, time entries, own calendar<br/>Intern → case search (redacted), own calendar<br/>Anonymous/stdio → bypass (no restriction)
+    end
+
+    %% ═══════════════════════════════════════════════════════════════
+    %% PHASE 4 — MediatR CQRS Dispatch & Data Source Resolution
+    %% ═══════════════════════════════════════════════════════════════
+
+    Note over S,G: PHASE 4 — MediatR CQRS Dispatch and Data Source Resolution
+
+    S ->> S: Construct IRequest (e.g. SearchCasesQuery)<br/>Dispatch via IMediator.Send()
+
+    alt Path A — Local Database (EF Core + Identity-Scoped Filters)
+        S ->> DB: EF Core query using IFirmIdentityContext<br/>to build role-aware WHERE clauses
+        activate DB
+        Note over S,DB: Data scoping per FirmRole:<br/>Partner: all firm cases, full billing access<br/>Associate: WHERE CaseId IN (assigned), own time entries<br/>OfCounsel: WHERE PracticeGroupId = own (read-only)<br/>Paralegal: WHERE CaseId IN (assigned), no billing<br/>LegalAssistant: WHERE AttorneyId = SupervisorId<br/>Intern: WHERE CaseId IN (assigned) + redact privileged
+        DB -->> S: Identity-filtered result set
+        deactivate DB
+
+    else Path B — External API via OBO (Document Management System)
+        S ->> S: IDownstreamTokenProvider.GetTokenAsync("ExternalApi")
+
+        rect rgb(219, 234, 254)
+            Note over S,E: OBO Exchange #2 — MCP Server acquires token for External API
+            S ->> E: POST /oauth2/v2.0/token<br/>grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer<br/>assertion=[inbound mcp bearer token]<br/>scope=api://[ext-api-id]/data.read<br/>client_id=[mcp_server_client_id]<br/>client_secret=[mcp_server_secret]<br/>requested_token_use=on_behalf_of
+            activate E
+            E ->> E: Validate assertion (MCP Server token)<br/>Verify MCP Server has admin-consented<br/>data.read permission on External API<br/>Carry forward original user identity (oid)
+            E -->> S: OBO access_token for External API
+            deactivate E
+            Note right of S: OBO token preserves original user oid<br/>aud = External API ClientId<br/>Cached via AddInMemoryTokenCaches —<br/>subsequent calls skip this exchange
+        end
+
+        S ->> X: GET /api/documents?caseId=...<br/>Authorization: Bearer [ext-api-obo-token]
+        activate X
+        X ->> X: JWT Bearer middleware validates token<br/>(audience = External API ClientId,<br/>issuer = Entra ID tenant)
+        X ->> X: Extract oid claim — original user identity<br/>preserved through the entire OBO chain
+        X ->> X: Apply DMS authorization rules<br/>(user sees only documents they can access)
+        X -->> S: User-scoped document results
+        deactivate X
+
+    else Path C — Microsoft Graph via OBO (Calendar, Mail, Files)
+        S ->> S: IDownstreamTokenProvider.GetTokenAsync("MicrosoftGraph")
+
+        rect rgb(219, 234, 254)
+            Note over S,E: OBO Exchange #3 — MCP Server acquires token for Microsoft Graph
+            S ->> E: POST /oauth2/v2.0/token<br/>grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer<br/>assertion=[inbound mcp bearer token]<br/>scopes=User.Read Calendars.Read Calendars.ReadWrite<br/>Mail.Read Files.Read.All Sites.Read.All<br/>client_id=[mcp_server_client_id]<br/>client_secret=[mcp_server_secret]<br/>requested_token_use=on_behalf_of
+            activate E
+            E ->> E: Validate assertion<br/>Verify admin-consented Graph permissions<br/>Scope intersection: app permissions AND user consent
+            E -->> S: OBO access_token for Microsoft Graph
+            deactivate E
+            Note right of S: aud = graph.microsoft.com<br/>Graph returns only data the user<br/>has consent and access to view<br/>Cached via AddInMemoryTokenCaches
+        end
+
+        S ->> G: GET /me/events, /me/messages, /me/drive/root/children<br/>Authorization: Bearer [graph-obo-token]
+        activate G
+        G -->> S: User's calendar events, mail, OneDrive files<br/>(scoped by user identity + granted permissions)
+        deactivate G
+    end
+
+    %% ═══════════════════════════════════════════════════════════════
+    %% RESPONSE — Data flows back through the chain
+    %% ═══════════════════════════════════════════════════════════════
+
+    S -->> W: JSON-RPC 2.0 response via SSE stream<br/>MCP tool result (user-scoped data)
+    deactivate S
+
+    activate W
+    W -->> U: Render tool results in Blazor UI<br/>(data is scoped to what this user can access)
+    deactivate W
+
+    Note over U,G: Identity Preservation Guarantee:<br/>The original user's oid is carried through every OBO hop.<br/>No service can access more data than the user is authorized to see.<br/>Token chain: User → Web App → MCP Server → External API / Graph

@@ -62,6 +62,7 @@ See [`docs/tool-permissions.md`](./docs/tool-permissions.md) for the role-to-too
 ## Tech Stack
 
 - **.NET 9** — Dual transport: Generic Host (stdio) + ASP.NET Core WebApplication (HTTP)
+- TODO UPdate all docs to https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-10.0.103-windows-x64-installer since .NET 10 is now out and .NET 9 is out of support
 - **Blazor Web App** — Interactive Server render mode, Fluent UI, Entra ID OIDC ([README](./src/LawCorp.Mcp.Web/README.md))
 - **ModelContextProtocol 1.0.0-rc.1** — Official C# MCP SDK + ASP.NET Core integration
 - **Entity Framework Core 9** — ORM with SQL Server Express

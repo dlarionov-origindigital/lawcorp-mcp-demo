@@ -125,6 +125,7 @@ public static class ServerBootstrap
         }
 
         builder.Services.AddSingleton<IUserContext, AnonymousUserContext>();
+        builder.Services.AddSingleton<IDownstreamTokenProvider, NoOpTokenProvider>();
         RegisterSharedServices(builder.Services, builder.Configuration);
 
         builder.Services
